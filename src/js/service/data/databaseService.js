@@ -274,22 +274,14 @@ function initInternal(hashedUserPassword, username, isLocalUser) {
             return pouchDbService.allArray(MetaData.getIdPrefix());
         })
         .then((metadataObjects) => {
-            //create metadata object if not exisiting, update datamodel version, if outdated
-            let promises = [];
-            if (metadataObjects.length === 0) {
-                let metadata = new MetaData();
-                metadataObjects = [metadata];
-                encryptionService.setEncryptionProperties(hashedUserPassword, metadata.id, isLocalUser);
-                promises.push(applyFiltersAndSave(MetaData.getIdPrefix(), metadata));
-            }
+            metadataObjects = metadataObjects || [];
             metadataObjects.sort((a, b) => a.id.localeCompare(b.id)); // always prefer older metadata objects
             let metadataIds = metadataObjects.map((o) => o.id);
             encryptionService.setEncryptionProperties(hashedUserPassword, metadataIds, isLocalUser);
-
             if (metadataObjects.length && metadataObjects.length > 1) {
                 log.warn('found duplicated metadata!');
             }
-            return Promise.all(promises);
+            return Promise.resolve();
         });
     _initPromise.then(() => {
         _lastDataModelVersion = null;

@@ -166,7 +166,9 @@ modelUtil.convertObjects = function (objects, getConversionFunctionsFunction, co
     for (let i = 0; i < objects.length; i++) {
         let filterFunctions = getConversionFunctionsFunction(modelUtil.getModelVersionObject(objects[i].modelVersion));
         filterFunctions.forEach((filterFn) => {
-            objects[i] = filterFn(objects[i], conversionOptions);
+            if (objects[i]) {
+                objects[i] = filterFn(objects[i], conversionOptions);
+            }
         });
     }
     objects = objects.filter(o => !!o);
