@@ -232,6 +232,7 @@ imageUtil.getScreenshot = async function (selector, options = {}) {
     };
 
     try {
+        await htmlToImage.toCanvas(element, config); // "warm up" - prevents missing images on iOS, see https://github.com/asterics/Asterics-AAC/issues/773
         const canvas = await htmlToImage.toCanvas(element, config);
         if (options.returnCanvas) {
             return canvas;
