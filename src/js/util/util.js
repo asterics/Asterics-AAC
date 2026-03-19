@@ -57,10 +57,10 @@ util.throttle = function (fn, args, minPauseMs, key) {
     if (!fn || !fn.apply) {
         return;
     }
-    minPauseMs = minPauseMs || 500;
+    minPauseMs = minPauseMs !== undefined ? minPauseMs : 500;
     let historyKey = key || fn;
     let lastCall = _throttleHistory[historyKey];
-    if (!lastCall || new Date().getTime() - lastCall > minPauseMs) {
+    if (!lastCall || new Date().getTime() - lastCall >= minPauseMs) {
         fn.apply(null, args);
         _throttleHistory[historyKey] = new Date().getTime();
     }
@@ -126,15 +126,24 @@ util.copyBlobToClipboard = async function(blob) {
     }
 };
 
-util.copyCollectContentToClipboard = async function() {
-    let blob = await util.getCollectContentBlob(5);
+util.copyCollectContentToClipboard = async function () {
+    let blob = await util.getCollectContentBlob({scale: 5, bgColor: constants.COLORS.TRANSPARENT});
     await util.copyBlobToClipboard(blob);
 }
 
-util.getCollectContentBlob = async function(scale = 2) {
+/**
+ *
+ * @param options
+ * @param options.scale
+ * @param options.bgColor
+ * @return {Promise<unknown>}
+ */
+util.getCollectContentBlob = async function (options = {}) {
+    options.scale = options.scale || 2;
     let imageCanvas = await imageUtil.getScreenshot(".collect-items-container", {
-        scale: scale,
-        returnCanvas: true
+        scale: options.scale,
+        returnCanvas: true,
+        bgColor: options.bgColor
     });
     if (!imageCanvas) {
         return null;
