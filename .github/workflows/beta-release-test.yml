@@ -120,14 +120,16 @@ jobs:
           # 2. Execute SFTP Commands
           lftp -u "$USER","$PASS" sftp://$HOST <<EOF
           set sftp:connect-program "ssh -a -x -o StrictHostKeyChecking=no"
-          mkdir -p "$REMOTE_PATH"
+          mkdir -fp "$REMOTE_PATH"
           cd "$REMOTE_PATH"
-          mirror -R --delete \
-            --include-glob app/ \
-            --include-glob serviceWorker.js \
-            --include-glob serviceWorkerCachePaths.js \
-            --include-glob unsupported.html \
-            --include-glob index.html \
+          mirror -R --delete -v \
+            --exclude-glob .git/ \
+            --exclude-glob .github/ \
+            --exclude-glob docs/ \
+            --exclude-glob node_modules/ \
+            --exclude-glob scripts/ \
+            --exclude-glob src/ \
+            --exclude-glob superlogin/ \
             ./ .
           bye
           EOF

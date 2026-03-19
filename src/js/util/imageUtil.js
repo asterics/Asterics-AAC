@@ -1,3 +1,5 @@
+import {constants} from "./constants";
+
 var imageUtil = {};
 
 /**
@@ -197,11 +199,23 @@ imageUtil.urlToBase64 = function (url, maxWidth, mimeType) {
  * @param options.quality image quality (0 to 1), defaults to 0.6
  * @param options.mimeType "image/webp" (default), "image/png", or "image/jpeg"
  * @param options.returnCanvas if true, returns the HTMLCanvasElement
+ * @param options.bgColor custom background color to use for the screenshot
  * @returns {Promise<*>} the screenshot data, null if there was no element for the given selector
  */
 imageUtil.getScreenshot = async function (selector, options = {}) {
     const element = document.querySelector(selector);
     if (!element) return null;
+
+    if (!options.bgColor) {
+        // 1. Get the "real" background color of the element
+        const computedStyle = window.getComputedStyle(element);
+        options.bgColor = computedStyle.backgroundColor;
+
+        // 2. If the background is transparent (rgba(0,0,0,0)), default to white
+        if (options.bgColor === 'rgba(0, 0, 0, 0)' || options.bgColor === constants.colors.TRANSPARENT) {
+            options.bgColor = '#ffffff';
+        }
+    }
 
     const htmlToImage = await import(/* webpackChunkName: "html-to-image" */ 'html-to-image');
     const config = {
@@ -210,6 +224,7 @@ imageUtil.getScreenshot = async function (selector, options = {}) {
         cacheBust: false,
         includeQueryParams: true,
         skipFonts: true,
+        backgroundColor: options.bgColor,
         filter: (node) => {
             if (options.ignoreSVG) {
                 // Ignore SVG <img> tags
@@ -232,6 +247,7 @@ imageUtil.getScreenshot = async function (selector, options = {}) {
     };
 
     try {
+        await htmlToImage.toCanvas(element, config); // "warm up" - prevents missing images on iOS, see https://github.com/asterics/Asterics-AAC/issues/773
         const canvas = await htmlToImage.toCanvas(element, config);
         if (options.returnCanvas) {
             return canvas;

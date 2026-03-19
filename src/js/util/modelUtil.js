@@ -121,7 +121,7 @@ modelUtil.getLatestModelVersion = function () {
 
 /**
  * returns true if the given user has a valid data model version matching the version of the app.
- * exception: transition to version 7 is treated okay if app has version 6 - change in encryption, see https://github.com/asterics/AsTeRICS-Grid/issues/748
+ * exception: transition to version 7 is treated okay if app has version 6 - change in encryption, see https://github.com/asterics/Asterics-AAC/issues/748
  * @param user
  */
 modelUtil.hasValidMajorModelVersion = function(user) {
@@ -166,7 +166,9 @@ modelUtil.convertObjects = function (objects, getConversionFunctionsFunction, co
     for (let i = 0; i < objects.length; i++) {
         let filterFunctions = getConversionFunctionsFunction(modelUtil.getModelVersionObject(objects[i].modelVersion));
         filterFunctions.forEach((filterFn) => {
-            objects[i] = filterFn(objects[i], conversionOptions);
+            if (objects[i]) {
+                objects[i] = filterFn(objects[i], conversionOptions);
+            }
         });
     }
     objects = objects.filter(o => !!o);
