@@ -31,6 +31,7 @@ let initPromise = new Promise(resolve => {
 });
 
 let _waitingSpeakOptions = {};
+let _speakArrayRunId = undefined;
 
 /**
  * speaks given text.
@@ -62,7 +63,8 @@ speechService.speak = async function (textOrOject, options = {}) {
     let userSettings = localStorageService.getUserSettings();
     let text = null;
     let isString = typeof textOrOject === 'string';
-    if (userSettings.voiceConfig.waitForSpeechToFinish && (await speechService.isSpeaking())) {
+    let isSpeaking = await speechService.isSpeaking();
+    if (userSettings.voiceConfig.waitForSpeechToFinish && (isSpeaking || (_speakArrayRunId && !options.dontStop))) {
         return;
     }
     if (!textOrOject || (!isString && Object.keys(textOrOject).length === 0)) {
@@ -96,6 +98,7 @@ speechService.speak = async function (textOrOject, options = {}) {
     $(document).trigger(constants.EVENT_SPEAKING_TEXT, [text]);
     if (!options.dontStop) {
         speechService.stopSpeaking();
+        _speakArrayRunId = null;
     }
     let voices = getVoicesById(preferredVoiceId) || getVoicesByLang(langToUse);
     let nativeVoices = voices.filter((voice) => voice.type === constants.VOICE_TYPE_NATIVE);
@@ -178,29 +181,41 @@ speechService.resetSpeakAfterFinished = function () {
  * @param index
  * @return {Promise<void>}
  */
-speechService.speakArray = async function (array, progressFn, index) {
+speechService.speakArray = async function (array, progressFn) {
     let speaking = await speechService.isSpeaking();
+    let userSettings = localStorageService.getUserSettings();
+    if (userSettings.voiceConfig.waitForSpeechToFinish && (speaking || _speakArrayRunId)) {
+        return;
+    }
     if (speaking) {
         speechService.stopSpeaking();
     }
-    index = index || 0;
+    let localRunId = _speakArrayRunId = Date.now();
     progressFn = progressFn || (() => {});
-    array = JSON.parse(JSON.stringify(array));
-    if (!array || array.length === 0) {
+    array = array || [];
+
+    for (let [index, object] of array.entries()) {
+        if (localRunId !== _speakArrayRunId) {
+            if (_speakArrayRunId === null) {
+                // If it is explicitly null, speak() aborted - should clear the marked element.
+                // If it's not null, a new speakArray() took over, so leave the UI alone.
+                progressFn(null, true);
+            }
+            return;
+        }
+        progressFn(index);
+        if (object.text) {
+            speechService.speak(object.text, {dontStop: true});
+            await speechService.waitForFinishedSpeaking();
+        } else if (object.base64Sound) {
+            await audioUtil.playAudio(object.base64Sound);
+            await audioUtil.waitForAudioEnded();
+        }
+    }
+    if (localRunId === _speakArrayRunId || _speakArrayRunId === null) {
         progressFn(null, true);
-        return;
+        _speakArrayRunId = null;
     }
-    progressFn(index);
-    currentSpeakArray = JSON.parse(JSON.stringify(array));
-    let object = currentSpeakArray.shift();
-    if (object.text) {
-        speechService.speak(object.text, { dontStop: true });
-        await speechService.waitForFinishedSpeaking();
-    } else if (object.base64Sound) {
-        await audioUtil.playAudio(object.base64Sound);
-        await audioUtil.waitForAudioEnded();
-    }
-    speechService.speakArray(currentSpeakArray, progressFn, index + 1);
 };
 
 speechService.stopSpeaking = function () {
