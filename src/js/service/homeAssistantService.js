@@ -10,7 +10,7 @@
 let homeAssistantService = {};
 
 homeAssistantService.fetchEntities = async function (baseUrl, token) {
-    const base = (baseUrl || 'http://192.168.0.230:8123').replace(/\/api.*$/, '').replace(/^https:/, 'http:');
+    const base = (baseUrl || 'http://homeassistant.local:8123').replace(/\/api.*$/, '').replace(/^https:/, 'http:');
     const url = `${base}/api/states`;
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = 'Bearer ' + token;
@@ -22,7 +22,7 @@ homeAssistantService.fetchEntities = async function (baseUrl, token) {
 
 homeAssistantService.sendAction = async function (action) {
     try {
-        const base = (action.homeAssistantUrl || 'http://192.168.0.230:8123').replace(/\/api.*$/, '').replace(/^https:/, 'http:');
+        const base = (action.homeAssistantUrl || 'http://homeassistant.local:8123').replace(/\/api.*$/, '').replace(/^https:/, 'http:');
          const domain = (action.itemName || '').split('.')[0] || (action.domain || '');
          const service = action.service || mapActionToService(action.actionType);
          const url = `${base}/api/services/${domain}/${service}`;
@@ -45,8 +45,8 @@ homeAssistantService.sendAction = async function (action) {
 homeAssistantService.getRestURL = function (userUri) {
     if (!userUri) {
         userUri = window.location.hostname.indexOf('grid.asterics.eu') > -1
-            ? 'http://192.168.0.230:8123/api/states'
-            : 'http://192.168.0.230:8123/api/states';
+            ? 'http://homeassistant.local:8123/api/states'
+            : 'http://homeassistant.local:8123/api/states';
     }
 
     if (userUri.indexOf('http') === -1) {
@@ -59,8 +59,8 @@ homeAssistantService.getRestURL = function (userUri) {
 function mapActionToService(actionType) {
     if (!actionType) return 'toggle';
     const t = actionType.toString().toUpperCase();
-    if (t === 'ON' || t === 'TURN_ON') return 'turn_on';
-    if (t === 'OFF' || t === 'TURN_OFF') return 'turn_off';
+    if (t === 'ON') return 'turn_on';
+    if (t === 'OFF') return 'turn_off';
     if (t === 'TOGGLE') return 'toggle';
     if (t === 'BRIGHTNESS') return 'turn_on';
     if (t === 'OPEN') return 'open_cover';

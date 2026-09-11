@@ -8,7 +8,7 @@
                 <input class="col-12" id="inputHomeAssistantUri" 
                        v-model="action.homeAssistantUrl" 
                        type="text"
-                       placeholder="http://192.168.0.230:8123">
+                       placeholder="http://homeassistant.local:8123">
                 </input>  
             </div>
             <div class="col-12 col-md-4">
@@ -380,7 +380,7 @@ export default {
         },
     },
     mounted() {
-        this.action.homeAssistantUrl = this.action.homeAssistantUrl || 'http://192.168.0.230:8123';
+        this.action.homeAssistantUrl = this.action.homeAssistantUrl || 'http://homeassistant.local:8123';
         this.loadBearerTokenFromStorage();
         //this.fetchItems();
     }
