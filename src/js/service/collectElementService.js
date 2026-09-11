@@ -25,6 +25,7 @@ import { liveElementService } from './liveElementService';
 import { MetaData } from '../model/MetaData';
 import { GridData } from '../model/GridData';
 import { gridUtil } from '../util/gridUtil';
+import {localStorageService} from "./data/localStorageService";
 
 let collectElementService = {};
 
@@ -115,6 +116,7 @@ collectElementService.doCollectElementActions = async function (action, gridElem
     }
     let speakText = getPrintText({ dontIncludePronunciation: false });
     let speakArray = getSpeakArray();
+    let userSettings = localStorageService.getUserSettings();
     switch (action) {
         case GridActionCollectElement.COLLECT_ACTION_SPEAK:
             if (isSeparateMode(collectMode)) {
@@ -152,7 +154,9 @@ collectElementService.doCollectElementActions = async function (action, gridElem
             break;
         case GridActionCollectElement.COLLECT_ACTION_CLEAR:
             clearAll();
-            speechService.stopSpeaking();
+            if (!userSettings.voiceConfig.waitForSpeechToFinish) {
+                speechService.stopSpeaking();
+            }
             break;
         case GridActionCollectElement.COLLECT_ACTION_REMOVE_WORD:
             let last = getLastElement();
@@ -174,7 +178,9 @@ collectElementService.doCollectElementActions = async function (action, gridElem
             if (changed) {
                 updateCollectElements();
             }
-            speechService.stopSpeaking();
+            if (!userSettings.voiceConfig.waitForSpeechToFinish) {
+                speechService.stopSpeaking();
+            }
             break;
         case GridActionCollectElement.COLLECT_ACTION_REMOVE_CHAR:
             let lastElem = getLastElement();
