@@ -1,5 +1,5 @@
 /**
- * util methods for grid layout, e.g. collision-handling, independent of AsTeRICS Grid
+ * util methods for grid layout, e.g. collision-handling, independent of Asterics AAC
  */
 let gridLayoutUtil = {};
 
@@ -135,8 +135,10 @@ gridLayoutUtil.moveAsPossible = function(allElements = [], moveElements = [], di
     for (let element of moveElements) {
         let otherElements = allElements.filter(el => el.id !== element.id);
         let step;
-
-        for (step = 1; step <= (options.maxMove || gridLayoutUtil.MAX_GRID_SIZE); step++) {
+        let maxMove = options.outOfBounds ?
+            Math.max(gridLayoutUtil.getHeight(allElements), gridLayoutUtil.getWidth(allElements)) :
+            (options.maxMove || gridLayoutUtil.MAX_GRID_SIZE);
+        for (step = 1; step <= maxMove; step++) {
             if (!gridLayoutUtil.isFreeSpace(otherElements, element.x + xyDiff.x * step, element.y + xyDiff.y * step, element.width, element.height, options)) {
                 break;
             }
@@ -342,6 +344,45 @@ gridLayoutUtil.elementsCanBeInsertedAt = function(gridData, elements = [], posit
 };
 
 /**
+ * Increases the given element as far as possible within the given grid.
+ *
+ * @param elements all elements of the grid, can contain the element to increase or not
+ * @param element the element to increase
+ * @param options
+ * @param options.gridWidth standard width of the grid, can be overruled by given grid elements
+ * @param options.gridHeight standard height of the grid, can be overruled by given grid elements
+ * @return the element with changed properties width and height which do not collide with existing other elements
+ */
+gridLayoutUtil.increaseElement = function(elements, element, options = {}) {
+    if (!elements.includes(element)) {
+        elements = elements.concat([element]);
+    }
+    let xMax = gridLayoutUtil.getWidth(elements, options.gridWidth);
+    let yMax = gridLayoutUtil.getHeight(elements, options.gridHeight);
+
+    let incX = true;
+    let incY = true;
+    while (incX || incY) {
+        if (incX) {
+            element.width++;
+        }
+        if (hasCollisions(elements) || element.x + element.width > xMax) {
+            element.width--;
+            incX = false;
+        }
+        if (incY) {
+            element.height++;
+        }
+        if (hasCollisions(elements) || element.y + element.height > yMax) {
+            element.height--;
+            incY = false;
+        }
+    }
+
+    return element;
+};
+
+/**
  * moves all elements, so that the most top-left element is at 0 / 0 afterwards
  * @param elements
  * @returns {*[]}
@@ -356,6 +397,34 @@ gridLayoutUtil.normalizePositions = function(elements = []) {
         e.y -= minElem.y;
     }
     return elements;
+};
+
+/**
+ * returns the next close free position from a given position. If the position is already free it's returned as-is.
+ *
+ * @param gridData
+ * @param givenPosition
+ * @return a position with properties x and y like {x: 0, y: 0}
+ */
+gridLayoutUtil.getNextFreePosition = function(gridData, givenPosition = {}) {
+    let position = JSON.parse(JSON.stringify(givenPosition));
+    position.x = position.x || 0;
+    position.y = position.y || 0;
+    let matrix = getOccupiedMatrix(gridData.gridElements);
+    let width = gridLayoutUtil.getWidth(gridData.gridElements, gridData.minColumnCount);
+    let notFree = isOccupied(matrix, position.x, position.y);
+    if (notFree) {
+        for (let y = position.y; y < 200; y++) {
+            for (let x = position.x; x < width; x++) {
+                if (!isOccupied(matrix, x, position.y)) {
+                    position.x = x;
+                    return position;
+                }
+            }
+            position.y++;
+        }
+    }
+    return position;
 };
 
 /**

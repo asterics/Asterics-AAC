@@ -11,7 +11,7 @@
 
                     <div class="modal-body mt-2" v-if="gridElement">
                         <div v-if="currentTab === TABS.TAB_GENERAL">
-                            <edit-element-general v-if="gridElement.type === GridElement.ELEMENT_TYPE_NORMAL || gridElement.type === GridElement.ELEMENT_TYPE_LIVE" :grid-element="gridElement" @searchImage="toImageSearch"></edit-element-general>
+                            <edit-element-general v-if="gridElement.type === GridElement.ELEMENT_TYPE_NORMAL || gridElement.type === GridElement.ELEMENT_TYPE_LIVE" :grid-element="gridElement" :grid-data="gridData" @searchImage="toImageSearch"></edit-element-general>
                             <edit-element-youtube v-if="gridElement.type === GridElement.ELEMENT_TYPE_YT_PLAYER" :grid-element="gridElement"></edit-element-youtube>
                             <edit-element-collect v-if="gridElement.type === GridElement.ELEMENT_TYPE_COLLECT" :grid-element="gridElement"></edit-element-collect>
                             <edit-element-matrix v-if="gridElement.type === GridElement.ELEMENT_TYPE_MATRIX_CONVERSATION" :grid-element="gridElement"></edit-element-matrix>
@@ -68,6 +68,7 @@
     import EditElementWordForms from "./editElementWordForms.vue";
     import EditElementLive from './editElementLive.vue';
     import EditElementMatrix from './editElementMatrix.vue';
+    import { gridLayoutUtil } from '../grid-layout/utils/gridLayoutUtil';
 
     const TAB_GENERAL = 'TAB_GENERAL';
     const TAB_IMAGE = 'TAB_IMAGE';
@@ -122,6 +123,7 @@
             addNext() {
                 var thiz = this;
                 thiz.saveInternal().then(() => {
+                    this.$emit('reload', this.gridData);
                     thiz.initInternal();
                     $('#inputLabel').focus();
                 });
@@ -130,7 +132,10 @@
                 var thiz = this;
                 if (!thiz.editElementId) return;
 
-                thiz.saveInternal().then(() => {
+                thiz.saveInternal().then((savedSomething) => {
+                    if (savedSomething) {
+                        this.$emit('reload', this.gridData);
+                    }
                     thiz.editElementId = new GridData(thiz.gridData).getNextElementId(thiz.editElementId, invertDirection, thiz.gridElement.type);
                     thiz.initInternal();
                     $('#inputLabel').focus();
@@ -169,6 +174,7 @@
                         thiz.gridElement.label = util.isString(thiz.gridElement.label) ? {} : thiz.gridElement.label;
                     } else {
                         let newXYPos = this.newPosition && this.newPosition.x !== undefined ? this.newPosition : gridData.getNewXYPos();
+                        newXYPos = gridLayoutUtil.getNextFreePosition(this.gridData, newXYPos);
                         log.debug('creating element: x ' + newXYPos.x + ' / y ' + newXYPos.y);
                         thiz.gridElement = JSON.parse(JSON.stringify(new GridElement({
                             x: newXYPos.x,

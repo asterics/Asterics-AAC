@@ -118,9 +118,9 @@
                 allChildren: null,
                 options: {
                     exportConnected: true,
-                    exportDictionaries: true,
-                    exportUserSettings: true,
-                    exportGlobalGrid: true,
+                    exportDictionaries: false,
+                    exportUserSettings: false,
+                    exportGlobalGrid: false,
                     exportOBZ: false,
                     exportLang: constants.LANG_EXPORT_ALL,
                     exportLangOptions: [constants.LANG_EXPORT_ALL, constants.LANG_EXPORT_CURRENT]
@@ -159,7 +159,7 @@
                 if (gridIds.length === 1 && this.selectedGrid) {
                     filename = `${user}_${util.getCurrentDateTimeString()}_${i18nService.getTranslation(this.selectedGrid.label)}`;
                 } else {
-                    filename = `${user}_${util.getCurrentDateTimeString()}_asterics-grid-custom-backup`;
+                    filename = `${user}_${util.getCurrentDateTimeString()}_asterics-aac-custom-backup`;
                 }
                 dataService.downloadToFile(gridIds, {
                     exportGlobalGrid: this.options.exportGlobalGrid,

@@ -9,8 +9,8 @@
                 </div>
                 <ul>
                     <li><a href="https://www.asterics.eu/manuals/asterics-grid/" target="_blank">{{ $t('userManual') }} <span>({{ 'lang.en' | translate }})</span></a></li>
-                    <li v-if="currentLang !== 'es'"><a href="https://aulaabierta.arasaac.org/en/asterics-grid_home" target="_blank">{{ $t('arasaacTutorial') }} <span>({{ 'lang.en' | translate }})</span></a></li>
-                    <li v-if="currentLang === 'es'"><a href="https://aulaabierta.arasaac.org/asterics-grid_inicio" target="_blank">{{ $t('arasaacTutorial') }} <span>({{ 'lang.es' | translate }})</span></a></li>
+                    <li v-if="currentLang !== 'es'"><a href="https://aulaabierta.arasaac.org/en/asterics-aac_home" target="_blank">{{ $t('arasaacTutorial') }} <span>({{ 'lang.en' | translate }})</span></a></li>
+                    <li v-if="currentLang === 'es'"><a href="https://aulaabierta.arasaac.org/asterics-aac_inicio" target="_blank">{{ $t('arasaacTutorial') }} <span>({{ 'lang.es' | translate }})</span></a></li>
                     <li><a href="https://www.youtube.com/playlist?list=PL0UXHkT03dGrIHldlEKR0ZWfNMkShuTNz" target="_blank"><span>{{ $t('tutorialVideosOnYoutube') }}</span> <span>({{ 'lang.de' | translate }})</span></a></li>
                     <li><a href="https://www.youtube.com/channel/UCVIQETg6tIMu3SdEHaIftIw/videos" target="_blank"><span>{{ $t('tutorialVideosOnYoutube') }}</span> <span>(Jim Luther, {{ 'lang.en' | translate }})</span></a></li>
                 </ul>
@@ -22,10 +22,10 @@
                     <li>
                         <i18n path="arasaacSupportSocialMedia" tag="span">
                             <template v-slot:instagramLink>
-                                <a href="https://www.instagram.com/asterics_grid/" target="_blank">{{ $t('instagramAstericsGridPage') }}</a>
+                                <a href="https://www.instagram.com/asterics_aac/" target="_blank">{{ $t('instagramAstericsGridPage') }}</a>
                             </template>
                             <template v-slot:facebookLink>
-                                <a href="https://www.facebook.com/asterics.grid.y.arasaac" target="_blank">{{ $t('facebookAstericsGridPage') }}</a>
+                                <a href="https://www.facebook.com/asterics.aac.y.arasaac" target="_blank">{{ $t('facebookAstericsGridPage') }}</a>
                             </template>
                         </i18n>
                         <span>({{ $t('lang.es') }}, {{ $t('lang.en') }}, {{ $t('lang.pt') }})</span>
@@ -41,7 +41,7 @@
                     <li>
                         <i18n path="foundBugReportGithubIssue" tag="span">
                             <template v-slot:githubLink>
-                                <a href="https://github.com/asterics/AsTeRICS-Grid/issues/new" target="_blank">{{ $t('createAnIssueOnGithub') }}</a>
+                                <a href="https://github.com/asterics/Asterics-AAC/issues/new" target="_blank">{{ $t('createAnIssueOnGithub') }}</a>
                             </template>
                         </i18n>
                         <span>({{ $t('lang.en') }})</span>

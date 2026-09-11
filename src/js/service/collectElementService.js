@@ -24,6 +24,7 @@ import {MapCache} from "../util/MapCache.js";
 import { liveElementService } from './liveElementService';
 import { MetaData } from '../model/MetaData';
 import { GridData } from '../model/GridData';
+import { gridUtil } from '../util/gridUtil';
 
 let collectElementService = {};
 
@@ -38,12 +39,9 @@ let convertToLowercaseIfKeyboard = true;
 let convertMode = null;
 let activateARASAACGrammarAPI = false;
 
-let duplicatedCollectPause = 0;
-let lastCollectId = null;
-let lastCollectTime = 0;
-
 let imgDimensionsCache = new MapCache();
 let _localMetadata = null;
+let _useCrossorignAttribute = true;
 
 collectElementService.getText = function () {
     return getPrintText();
@@ -235,16 +233,30 @@ collectElementService.doCollectElementActions = async function (action, gridElem
     predictionService.predict(getPredictText(), dictionaryKey);
 };
 
-collectElementService.addWordFormTagsToLast = function (tags, toggle) {
-    let lastElement = collectedElements[collectedElements.length - 1];
-    if (lastElement && !lastElement.wordFormFixated) {
-        let lastElementCopy = JSON.parse(JSON.stringify(lastElement));
-        lastElementCopy.wordFormTags = lastElementCopy.wordFormTags || [];
-        let currentLabel = getPrintTextOfElement(lastElementCopy);
-        lastElementCopy.wordFormTags = stateService.mergeTags(lastElementCopy.wordFormTags, tags, toggle);
-        let newLabel = stateService.getWordForm(lastElementCopy, {searchTags: lastElementCopy.wordFormTags, searchSubTags: true});
+collectElementService.addWordFormTagsToLast = function (tags, toggle, skipElementId) {
+    // Find the last element that doesn't have skipElementId
+    // This is more robust than skipLast because it doesn't depend on execution order
+    let targetIndex = -1;
+    for (let i = collectedElements.length - 1; i >= 0; i--) {
+        if (!skipElementId || collectedElements[i].id !== skipElementId) {
+            targetIndex = i;
+            break;
+        }
+    }
+
+    if (targetIndex < 0) {
+        return;
+    }
+
+    let targetElement = collectedElements[targetIndex];
+    if (targetElement && !targetElement.wordFormFixated) {
+        let elementCopy = JSON.parse(JSON.stringify(targetElement));
+        elementCopy.wordFormTags = elementCopy.wordFormTags || [];
+        let currentLabel = getPrintTextOfElement(elementCopy);
+        elementCopy.wordFormTags = stateService.mergeTags(elementCopy.wordFormTags, tags, toggle);
+        let newLabel = stateService.getWordForm(elementCopy, {searchTags: elementCopy.wordFormTags, searchSubTags: true});
         if (newLabel && newLabel !== currentLabel) {
-            collectedElements[collectedElements.length - 1] = lastElementCopy;
+            collectedElements[targetIndex] = elementCopy;
             updateCollectElements();
         }
     }
@@ -410,7 +422,7 @@ async function updateCollectElements(isSecondTry) {
                 let marked = markedImageIndex === index;
                 let imgHTML = null;
                 if (image) {
-                    imgHTML = `<img src="${image}" height="${imgHeight}" style="height: ${imgHeight}px"/>`;
+                    imgHTML = `<img src="${image}" height="${imgHeight}" style="height: ${imgHeight}px" onerror="handleCollectElementImageError()" ${_useCrossorignAttribute ? 'crossorigin="anonymous"' : ''}/>`;
                     totalWidth += elemWidth + 2 * imgMargin;
                 } else {
                     let fontSizeFactor = collectElement.textElemSizeFactor || 1.5;
@@ -517,7 +529,7 @@ function getOutputObject(element, options) {
         text = getLabel(element);
     }
     if (!text) {
-        text = stateService.getFirstForm(element);
+        text = gridUtil.getFirstWordForm(element);
     }
     text = util.convertLowerUppercase(text, convertMode);
     return {
@@ -567,12 +579,6 @@ function addTextElem(text) {
 }
 
 $(window).on(constants.ELEMENT_EVENT_ID, function (event, element) {
-    if (lastCollectId === element.id && new Date().getTime() - lastCollectTime < duplicatedCollectPause) {
-        return;
-    }
-    lastCollectId = element.id;
-    lastCollectTime = new Date().getTime();
-
     if (element.type === GridElement.ELEMENT_TYPE_COLLECT) {
         return;
     }
@@ -664,10 +670,18 @@ function triggerPredict() {
 
 async function getMetadataConfig() {
     _localMetadata = await dataService.getMetadata();
-    duplicatedCollectPause = _localMetadata.inputConfig.globalMinPauseCollectSpeak || 0;
     convertMode = _localMetadata.textConfig.convertMode;
     activateARASAACGrammarAPI = _localMetadata.activateARASAACGrammarAPI;
 }
+
+window.handleCollectElementImageError = function() {
+    let firstTime = !!_useCrossorignAttribute;
+    _useCrossorignAttribute = false;
+    if (firstTime) {
+        log.warn('error with crossorign attribute in collect element image - remove it (no screenshots, copy of content possible anymore)...');
+        updateCollectElements();
+    }
+};
 
 $(window).on(constants.EVENT_GRID_RESIZE, function () {
     setTimeout(updateCollectElements, 500);

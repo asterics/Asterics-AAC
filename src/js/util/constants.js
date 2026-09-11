@@ -1,8 +1,9 @@
 let constants = {};
 
 constants.ELEMENT_EVENT_ID = 'ELEMENT_EVENT_ID';
-constants.MODEL_VERSION = '{"major": 6, "minor": 0, "patch": 0}';
+constants.MODEL_VERSION = '{"major": 7, "minor": 0, "patch": 0}';
 constants.MODEL_VERSION_LOCAL = '{"major": 1, "minor": 0, "patch": 0}';
+constants.MODEL_VERSION_CHANGED_TO_USERNAME_AS_SALT = 7;
 
 constants.LOCAL_NOLOGIN_USERNAME = 'default-user';
 constants.LOCAL_DEMO_USERNAME = 'local-demo-user';
@@ -14,6 +15,17 @@ constants.VALIDATION_ERROR_REGEX = 'VALIDATION_ERROR_REGEX';
 constants.VALIDATION_ERROR_EXISTING = 'VALIDATION_ERROR_EXISTING';
 constants.VALIDATION_ERROR_FAILED = 'VALIDATION_ERROR_FAILED';
 constants.VALIDATION_VALID = 'VALIDATION_VALID';
+
+// MessageBox modal types
+constants.MODAL_TYPE_SUCCESS = 'success';
+constants.MODAL_TYPE_QUESTION = 'question';
+constants.MODAL_TYPE_WARNING = 'warning';
+constants.MODAL_TYPE_INFO = 'info';
+
+// MessageBox button presets
+constants.BUTTONS_OK = 'ok';
+constants.BUTTONS_YES_NO = 'yesno';
+constants.BUTTONS_OK_CANCEL = 'okcancel';
 
 constants.EVENT_DB_CONNECTION_LOST = 'EVENT_DB_CONNECTION_LOST';
 constants.EVENT_DB_PULL_UPDATED = 'EVENT_DB_PULL_UPDATED';
@@ -45,6 +57,7 @@ constants.EVENT_USERSETTINGS_UPDATED = 'EVENT_USERSETTINGS_UPDATED';
 constants.EVENT_CONFIG_RESET = 'EVENT_CONFIG_RESET';
 constants.EVENT_NAVIGATE_GRID_IN_VIEWMODE = 'EVENT_NAVIGATE_GRID_IN_VIEWMODE';
 constants.EVENT_NAVIGATE = 'EVENT_NAVIGATE';
+constants.EVENT_NAVIGATED = 'EVENT_NAVIGATED';
 constants.EVENT_SPEAKING_TEXT = 'EVENT_SPEAKING_TEXT';
 
 constants.EVENT_MATRIX_SCROLL_UP = 'EVENT_MATRIX_SCROLL_UP';
@@ -54,10 +67,11 @@ constants.EVENT_MATRIX_SENDING_START = 'EVENT_MATRIX_SENDING_START';
 
 constants.SW_EVENT_ACTIVATED = 'SW_EVENT_ACTIVATED';
 constants.SW_EVENT_URL_CACHED = 'SW_EVENT_URL_CACHED';
-constants.SW_EVENT_REQ_CACHE = 'SW_EVENT_REQ_CACHE';
+constants.SW_EVENT_REQ_CACHE_BATCH = 'SW_EVENT_REQ_CACHE_BATCH';
 constants.SW_MATRIX_REQ_DATA = 'SW_MATRIX_REQ_DATA';
 constants.SW_CACHE_TYPE_IMG = 'CACHE_TYPE_IMG';
 constants.SW_CACHE_TYPE_GENERIC = 'CACHE_TYPE_GENERIC';
+constants.SW_CONSOLE = 'SW_CONSOLE';
 
 constants.DB_SYNC_STATE_SYNCINC = 'DB_SYNC_STATE_SYNCINC';
 constants.DB_SYNC_STATE_SYNCED = 'DB_SYNC_STATE_SYNCED';
@@ -69,10 +83,14 @@ constants.ENVIRONMENT = '#ASTERICS_GRID_ENV#';
 constants.IS_ENVIRONMENT_DEV = constants.ENVIRONMENT === '#ASTERICS_' + 'GRID_ENV#';
 constants.IS_ENVIRONMENT_BETA = constants.ENVIRONMENT === 'BETA';
 constants.IS_ENVIRONMENT_PROD = !constants.IS_ENVIRONMENT_DEV && !constants.IS_ENVIRONMENT_BETA;
+constants.FORCE_USE_SW = false;
+constants.FORCE_CONNECT_DB = false;
+constants.ENABLE_REMOTE_DEBUGGING = false;
 constants.CURRENT_VERSION = '#ASTERICS_GRID_VERSION#';
 constants.IS_FIREFOX = navigator.userAgent.indexOf('Firefox') !== -1;
 constants.IS_SAFARI = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 constants.IS_MAC = (navigator.platform || ((navigator.userAgentData || {}).platform) || "").toUpperCase().includes('MAC');
+constants.SUPPORTS_SERVICE_WORKER = ('serviceWorker' in navigator);
 
 constants.STATE_ACTIVATED_TTS = 'STATE_ACTIVATED_TTS';
 
@@ -86,11 +104,19 @@ constants.WEBRADIO_LAST_VOLUME_KEY = 'WEBRADIO_LAST_VOLUME_KEY';
 constants.PODCAST_LAST_VOLUME_KEY = 'PODCAST_LAST_VOLUME_KEY';
 
 constants.GRIDSET_FOLDER = 'app/gridsets/';
-constants.BOARDS_REPO_BASE_URL = "https://asterics.github.io/AsTeRICS-Grid-Boards/";
+constants.BOARDS_REPO_BASE_URL = "https://asterics.github.io/Asterics-AAC-Data/";
 
 constants.BOARD_TYPE_SELFCONTAINED = "BOARD_TYPE_SELFCONTAINED";
 constants.BOARD_TYPE_SINGLE = "BOARD_TYPE_SINGLE";
 constants.BOARD_TYPES = [constants.BOARD_TYPE_SELFCONTAINED, constants.BOARD_TYPE_SINGLE];
+
+constants.MAX_BASE64_IMAGE_SIZE_KB = 200;
+constants.MIME_TYPE_PNG = 'image/png';
+constants.MIME_TYPE_JPEG = 'image/jpeg';
+constants.MIME_TYPE_SVG = 'image/svg+xml';
+constants.MIME_TYPE_WEBP = 'image/webp';
+constants.MIME_TYPE_GIF = 'image/gif';
+constants.ALLOWED_IMG_MIME_TYPES = [constants.MIME_TYPE_PNG, constants.MIME_TYPE_JPEG, constants.MIME_TYPE_SVG, constants.MIME_TYPE_WEBP, constants.MIME_TYPE_GIF];
 
 constants.COLORS = {
     WHITE: '#ffffff',
@@ -98,7 +124,8 @@ constants.COLORS = {
     GRAY: '#808080',
     BLACK: '#000000',
     PREDICT_BACKGROUND: '#FFE4B2',
-    LIVE_BACKGROUND: '#C6ECFD'
+    LIVE_BACKGROUND: '#C6ECFD',
+    TRANSPARENT: 'transparent',
 }
 
 constants.PROP_TRANSFER_DONT_CHANGE = "PROP_TRANSFER_DONT_CHANGE";

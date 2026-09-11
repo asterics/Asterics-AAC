@@ -37,7 +37,7 @@ class GridElement extends Model({
     wordForms: [Model.Array(Object)], //Array of WordForm, removed for performance reasons
     fontSizePct: [Number],
     fontColor: [String],
-    backgroundColor: [String], // also used as border color for color mode: "border", see https://github.com/asterics/AsTeRICS-Grid/issues/580#issuecomment-3281187917
+    backgroundColor: [String], // also used as border color for color mode: "border", see https://github.com/asterics/Asterics-AAC/issues/580#issuecomment-3281187917
     borderColor: [String], // only used for color mode: "both"!
     colorCategory: [String],
     hidden: [Boolean],
@@ -59,15 +59,6 @@ class GridElement extends Model({
 
     hasSetPosition() {
         return this.x != null && this.x != undefined && this.y != null && this.y != undefined;
-    }
-
-    /**
-     * returns ID of Grid this element navigates to
-     * @return {[String | StringConstructor]|string|default.methods.gridTo.id|null}
-     */
-    getNavigateGridId() {
-        let navAction = this.actions.filter((action) => action.modelName === GridActionNavigate.getModelName())[0];
-        return navAction ? navAction.toGridId : null;
     }
 
     static getActionTypes() {
@@ -133,6 +124,8 @@ GridElement.ELEMENT_TYPE_PREDICTION = 'ELEMENT_TYPE_PREDICTION';
 GridElement.ELEMENT_TYPE_YT_PLAYER = 'ELEMENT_TYPE_YT_PLAYER';
 GridElement.ELEMENT_TYPE_LIVE = 'ELEMENT_TYPE_LIVE';
 GridElement.ELEMENT_TYPE_MATRIX_CONVERSATION = 'ELEMENT_TYPE_MATRIX_CONVERSATION';
+GridElement.ELEMENT_TYPE_DYNAMIC_GRID_PLACEHOLDER = 'ELEMENT_TYPE_DYNAMIC_GRID_PLACEHOLDER';
+GridElement.ELEMENT_TYPE_UI_FILLER = 'ELEMENT_TYPE_UI_FILLER'; // only for rendering, not a real element type
 
 GridElement.PROP_YT_PREVENT_CLICK = 'PROP_YT_PREVENT_CLICK';
 

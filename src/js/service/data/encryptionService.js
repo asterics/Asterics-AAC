@@ -3,12 +3,18 @@ import { dataUtil } from '../../util/dataUtil';
 import { sjcl } from '../../externals/sjcl';
 import { log } from '../../util/log.js';
 import { MapCache } from '../../util/MapCache';
+import { localStorageService } from './localStorageService';
+import { modelUtil } from '../../util/modelUtil';
+import { constants } from '../../util/constants';
+import {util} from "../../util/util";
 
 let STATIC_USER_PW_SALT = 'STATIC_USER_PW_SALT';
+let KEY_BACKUP_SALTS = 'KEY_BACKUP_SALTS';
 
 let encryptionService = {};
-let _encryptionSalts = null;
+let _encryptionSalts = [];
 let _encryptionBasePassword = null;
+let _saltUsername = '';
 let _isLocalUser = false;
 let _decryptionCache = new MapCache();
 let _hashCache = new MapCache();
@@ -40,9 +46,9 @@ encryptionService.encryptObject = function (object) {
     let jsonString = JSON.stringify(object);
     let shortJsonString = JSON.stringify(dataUtil.removeLongPropertyValues(object));
     let shortVersionDifferent = jsonString !== shortJsonString;
-    encryptedObject.encryptedDataBase64 = encryptionService.encryptString(jsonString, _encryptionSalts[0]);
+    encryptedObject.encryptedDataBase64 = encryptionService.encryptString(jsonString, _saltUsername);
     encryptedObject.encryptedDataBase64Short = shortVersionDifferent
-        ? encryptionService.encryptString(shortJsonString, _encryptionSalts[0])
+        ? encryptionService.encryptString(shortJsonString, _saltUsername)
         : null;
     return encryptedObject;
 };
@@ -71,15 +77,19 @@ encryptionService.decryptObjects = function (encryptedObjects, options) {
         try {
             let decryptedString = null;
             let decryptedObject = null;
+            let salts = _encryptionSalts;
+            if (modelUtil.getMajorVersion(encryptedObject) >= constants.MODEL_VERSION_CHANGED_TO_USERNAME_AS_SALT) {
+                salts = [_saltUsername].concat(_encryptionSalts);
+            }
             if (onlyShortVersion) {
                 let toDecrypt = encryptedObject.encryptedDataBase64Short || encryptedObject.encryptedDataBase64;
-                decryptedString = encryptionService.decryptStringTrySalts(toDecrypt, _encryptionSalts);
+                decryptedString = encryptionService.decryptStringTrySalts(toDecrypt, salts);
                 decryptedObject = JSON.parse(decryptedString);
                 decryptedObject.isShortVersion = true;
             } else {
                 decryptedString = encryptionService.decryptStringTrySalts(
                     encryptedObject.encryptedDataBase64,
-                    _encryptionSalts
+                    salts
                 );
                 decryptedObject = JSON.parse(decryptedString);
             }
@@ -88,7 +98,7 @@ encryptionService.decryptObjects = function (encryptedObjects, options) {
             decryptedObjects.push(decryptedObject);
         } catch (e) {
             log.error('error decrypting object: ' + encryptedObject.modelName + ', id: ' + encryptedObject.id);
-            log.error(e);
+            log.debug(e);
         }
     });
 
@@ -149,17 +159,20 @@ encryptionService.decryptString = function (encryptedString, encryptionSalt) {
     return decryptedString;
 };
 
-encryptionService.decryptStringTrySalts = function (encryptedString, trySalts) {
+encryptionService.decryptStringTrySalts = function (encryptedString, trySalts, omitLog = false) {
     try {
         trySalts = JSON.parse(JSON.stringify(trySalts));
         return encryptionService.decryptString(encryptedString, trySalts.shift());
     } catch (e) {
         if (trySalts.length === 0) {
-            log.error("wasn't able to decrypt string, no remaining salts for trying!");
+            log.debug("wasn't able to decrypt string, no remaining salts for trying!");
             throw e;
         }
-        log.warn("wasn't able to decrypt string, try next salt...", trySalts[0]);
-        return encryptionService.decryptStringTrySalts(encryptedString, trySalts);
+        if (!omitLog) {
+            log.warn("wasn't able to decrypt string, try next salts...");
+            log.debug("salts:", trySalts);
+        }
+        return encryptionService.decryptStringTrySalts(encryptedString, trySalts, true);
     }
 };
 
@@ -193,15 +206,46 @@ encryptionService.getUserPasswordHash = function (plaintextPassword) {
  * sets the encryption properties
  * @param hashedPassword the hashed user password
  * @param salts array of salts to use -> ID(s) of metadata object(s)
+ * @param isLocalUser true if the user is local and not online
  */
 encryptionService.setEncryptionProperties = function (hashedPassword, salts, isLocalUser) {
+    let saltUsernameOriginalCase = localStorageService.getAutologinOrActiveUser();
+    _saltUsername = saltUsernameOriginalCase.toLowerCase();
+    let fallbackSalts = getFallbackSalts();
     hashedPassword = hashedPassword || '';
     _encryptionBasePassword = hashedPassword;
     _encryptionSalts = Array.isArray(salts) ? salts : [salts];
+    _encryptionSalts = [saltUsernameOriginalCase].concat(_encryptionSalts);
+    _encryptionSalts = _encryptionSalts.concat(fallbackSalts);
+    _encryptionSalts = _encryptionSalts.filter(e => !!e);
     _isLocalUser = isLocalUser;
     _decryptionCache.clearAll();
     _hashCache.clearAll();
 };
+
+/**
+ * returns all current and previously known users logged in to this device.
+ * these are used as fallback for encryption salts - for trying to fix decryption errors
+ * due to https://github.com/asterics/Asterics-AAC/issues/781
+ *
+ * @return {*|*[]}
+ */
+function getFallbackSalts() {
+    let currentUsers = localStorageService.getSavedUsers() || [];
+    let backupSalts = localStorageService.getJSON(KEY_BACKUP_SALTS) || [];
+    backupSalts = util.deduplicateArray(currentUsers.concat(backupSalts));
+    localStorageService.saveJSON(KEY_BACKUP_SALTS, backupSalts);
+    return backupSalts;
+}
+
+window.addFallbackSalt = function (salt) {
+    let salts = getFallbackSalts();
+    if (!salts.includes(salt)) {
+        salts.push(salt);
+        _encryptionSalts.push(salt);
+        localStorageService.saveJSON(KEY_BACKUP_SALTS, salts);
+    }
+}
 
 function getEncryptionKey(salt) {
     return encryptionService.getStringHash('' + salt + _encryptionBasePassword);
@@ -212,13 +256,14 @@ function getEncryptionKey(salt) {
  */
 encryptionService.resetEncryptionProperties = function () {
     log.debug('reset encryption properties...');
-    _encryptionSalts = null;
+    _encryptionSalts = [];
     _encryptionBasePassword = null;
+    _saltUsername = '';
     _isLocalUser = false;
 };
 
 function throwErrorIfUninitialized() {
-    if (!_encryptionBasePassword || !_encryptionSalts || _encryptionSalts.length === 0) {
+    if (!_encryptionBasePassword) {
         let msg = 'using encryptionService uninitialized is not possible, aborting...';
         log.error(msg);
         throw msg;

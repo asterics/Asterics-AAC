@@ -23,6 +23,7 @@ let pdfOptions = {
     imgHeightPercentage: 0.8
 };
 let convertMode = null;
+let homeGridId = null;
 
 let patternFontMappings = [
     {
@@ -75,12 +76,12 @@ printService.gridsToPdf = async function (gridsData, options) {
         options.idParentsMap[grid.id] = options.idParentsMap[grid.id] || [];
         for (let element of grid.gridElements) {
             element = new GridElement(element);
-            let nav = element.getNavigateGridId();
+            let nav = gridUtil.getNavigateGridId(element, homeGridId);
             if (nav) {
                 options.idParentsMap[nav] = options.idParentsMap[nav] || [];
                 options.idParentsMap[nav].push(options.idPageMap[grid.id]);
             }
-            let label = i18nService.getTranslation(element.label);
+            let label = gridUtil.getDisplayLabel(element);
             for (let elem of patternFontMappings) {
                 if (elem.pattern && elem.pattern.test && elem.pattern.test(label)) {
                     options.fontPath = elem.font;
@@ -236,13 +237,13 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
         doc.setDrawColor(0);
         doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
         doc.roundedRect(xStartPos, yStartPos, currentWidth, currentHeight, 3, 3, 'FD');
-        if (i18nService.getTranslation(element.label)) {
+        if (gridUtil.getDisplayLabel(element)) {
             addLabelToPdf(doc, element, currentWidth, currentHeight, xStartPos, yStartPos, bgColor);
         }
         await addImageToPdf(doc, element, currentWidth, currentHeight, xStartPos, yStartPos);
         element = new GridElement(element);
-        if (options.showLinks && options.idPageMap[element.getNavigateGridId()]) {
-            let targetPage = options.idPageMap[element.getNavigateGridId()];
+        if (options.showLinks && options.idPageMap[gridUtil.getNavigateGridId(element, homeGridId)]) {
+            let targetPage = options.idPageMap[gridUtil.getNavigateGridId(element, homeGridId)];
             let iconWidth = Math.max(currentWidth / 10, 7);
             let offsetX = currentWidth - iconWidth - 1;
             let offsetY = 1;
@@ -271,7 +272,7 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
 }
 
 function addLabelToPdf(doc, element, currentWidth, currentHeight, xStartPos, yStartPos, bgColor) {
-    let label = i18nService.getTranslation(element.label);
+    let label = gridUtil.getDisplayLabel(element);
     let hasImg = element.image && (element.image.data || element.image.url);
     let fontSizeMM = hasImg ? currentHeight * (1 - pdfOptions.imgHeightPercentage) : currentHeight / 2;
     let fontSizePt = (fontSizeMM / 0.352778) * 0.8;
@@ -348,7 +349,7 @@ async function addImageToPdf(doc, element, elementWidth, elementHeight, xpos, yp
     if (!dim) {
         dim = await imageUtil.getImageDimensionsFromDataUrl(imageData);
     }
-    let imgHeightPercentage = i18nService.getTranslation(element.label) ? pdfOptions.imgHeightPercentage : 1;
+    let imgHeightPercentage = gridUtil.getDisplayLabel(element) ? pdfOptions.imgHeightPercentage : 1;
     let maxWidth = elementWidth - 2 * pdfOptions.imgMargin;
     let maxHeight = (elementHeight - 2 * pdfOptions.imgMargin) * imgHeightPercentage;
     let elementRatio = maxWidth / maxHeight;
@@ -407,6 +408,7 @@ async function loadFont(path, doc) {
 
 async function getMetadataConfig() {
     let metadata = await dataService.getMetadata();
+    homeGridId = metadata.homeGridId;
     if (metadata.textConfig) {
         convertMode = metadata.textConfig.convertMode;
     }

@@ -80,6 +80,7 @@
     import {helpService} from "../../js/service/helpService";
     import {i18nService} from "../../js/service/i18nService.js";
     import {MainVue} from "../../js/vue/mainVue.js";
+    import {messageUtil} from "../../js/util/messageUtil.js";
 
 
     export default {
@@ -130,8 +131,7 @@
                         header: i18nService.t('importDataFromFile'),
                         text: i18nService.t('deletingGrids')
                     });
-                    await dataService.deleteAllGrids();
-                    await dataService.deleteAllDictionaries();
+                    await dataService.resetUserData();
                 }
                 MainVue.showProgressBar(20, {
                     header: i18nService.t('importDataFromFile'),
@@ -152,10 +152,13 @@
                 if (this.options.resetBeforeImport) {
                     await dataService.markCurrentConfigAsBackedUp();
                 }
-                MainVue.showProgressBar(100);
-                if (this.reloadFn) {
-                    this.reloadFn();
-                }
+
+                // Show success message and reload on close
+                await messageUtil.showImportSuccess(this.importData, () => {
+                    if (this.reloadFn) {
+                        this.reloadFn();
+                    }
+                });
             },
             openHelp() {
                 helpService.openHelp();

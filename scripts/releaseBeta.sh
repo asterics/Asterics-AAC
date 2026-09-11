@@ -1,11 +1,16 @@
 set -e
 
 # ------------------------------------------------------------------
-# AsTeRICS Grid beta-release script
+# Asterics AAC beta-release script
 # ------------------------------------------------------------------
 # just builds and pushes to a sftp server of our hosting provider
 
 sshUserHost="u91187759@home708826695.1and1-data.host"
+
+# force to run in correct dir
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$SCRIPT_DIR"
+echo "running in $SCRIPT_DIR";
 
 doStash=true
 if git diff-index --quiet HEAD --; then
@@ -17,6 +22,11 @@ if $doStash; then
     git stash
 fi
 
+if $doStash; then
+    echo "apply stashed changes..."
+    git stash apply
+fi
+
 echo "building..."
 tagname="release-beta-$(date +%Y-%m-%d-%H.%M/%z)"
 tagnameSed="release-beta-$(date +%Y-%m-%d-%H.%M\\/%z)"
@@ -24,6 +34,8 @@ sed -i -e "s/#ASTERICS_GRID_VERSION#/$tagnameSed/g" src/js/util/constants.js
 sed -i -e "s/#ASTERICS_GRID_ENV#/BETA/g" src/js/util/constants.js
 sed -i -e "s/#ASTERICS_GRID_VERSION#/$tagnameSed/g" src/vue-components/views/aboutView.vue
 sed -i -e "s/#ASTERICS_GRID_VERSION#/$tagnameSed/g" serviceWorker.js
+
+rm -rf app/build
 npm run build
 
 echo "copy data to host..."
@@ -31,8 +43,10 @@ ssh $sshUserHost "rm -rf ~/asterics-grid-beta/*"
 scp index.html $sshUserHost:~/asterics-grid-beta/
 scp unsupported.html $sshUserHost:~/asterics-grid-beta/
 scp serviceWorker.js $sshUserHost:~/asterics-grid-beta/
+scp serviceWorkerCachePaths.js $sshUserHost:~/asterics-grid-beta/
 scp -r app $sshUserHost:~/asterics-grid-beta/app
 
+echo "discard temporary changes..."
 git checkout .
 
 if $doStash; then

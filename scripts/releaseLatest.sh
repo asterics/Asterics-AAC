@@ -1,7 +1,7 @@
 set -e
 
 # ------------------------------------------------------------------
-# AsTeRICS Grid latest-release script
+# Asterics AAC latest-release script
 # ------------------------------------------------------------------
 # releases the committed version on the current branch to gh-pages
 # as latest-release by performing the following steps:
@@ -19,13 +19,18 @@ do_gh_pages_update () {
    git fetch origin gh-pages
    git reset --hard origin/gh-pages
    rm -rf latest
-   git clone --depth=1 --branch $tagname https://github.com/asterics/AsTeRICS-Grid.git latest
+   git clone --depth=1 --branch $tagname https://github.com/asterics/Asterics-AAC.git latest
    rm -rf latest/.git/
    git add latest
    git commit -m "added tag '$tagname' for latest version in folder latest."
    git push origin gh-pages -f
    git checkout $branch
 }
+
+# force to run in correct dir
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$SCRIPT_DIR"
+echo "running in $SCRIPT_DIR";
 
 branch=$(git symbolic-ref --short HEAD)
 if [ $branch != "master" ]; then
@@ -57,10 +62,13 @@ sed -i -e "s/#ASTERICS_GRID_VERSION#/$tagnameSed/g" src/vue-components/views/abo
 sed -i -e "s/#ASTERICS_GRID_VERSION#/$tagnameSed/g" serviceWorker.js
 
 echo "building..."
+rm -rf app/build
 npm run build
-echo "commiting bundles..."
+
+echo "commiting bundles and service worker..."
 git add app/build
 git add serviceWorker.js
+git add serviceWorkerCachePaths.js
 git commit -m "added bundles and appcache for latest-release $tagname"
 git push origin HEAD
 git checkout src/vue-components/views/aboutView.vue

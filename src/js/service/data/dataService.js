@@ -22,6 +22,7 @@ import { util } from '../../util/util.js';
 import { boardService } from '../boards/boardService';
 
 let dataService = {};
+let metadataFallback = new MetaData();
 
 /**
  * gets a grid by ID.
@@ -113,10 +114,16 @@ dataService.getLastGridUpdateTime = async function () {
  * @see{GridData}
  *
  * @param gridData the GridData to save/update
+ * @param options
+ * @param options.clearThumbnail if true the thumbnail is cleared (after saving something that changed the visual appearance, for regenerating it somewhen)
  * @return {Promise} resolves after operation finished successful
  */
-dataService.saveGrid = function (gridData) {
+dataService.saveGrid = function (gridData, options = {}) {
     gridData = JSON.parse(JSON.stringify(gridData));
+    if (options.clearThumbnail) {
+        gridData.thumbnail = gridData.thumbnail || {};
+        gridData.thumbnail.shouldUpdate = true;
+    }
     gridData.gridElements = gridUtil.sortGridElements(gridData.gridElements);
     gridData.lastUpdateTime = new Date().getTime();
     return databaseService.saveObject(GridData, gridData);
@@ -160,36 +167,22 @@ dataService.deleteGrid = function (gridId) {
 };
 
 /**
- * Deletes all grids.
- *
- * @return {Promise}
+ * deletes all grids, all dictionaries and all duplicated metadata objects of the current user
+ * @return {Promise<*>}
  */
-dataService.deleteAllGrids = function () {
+dataService.resetUserData = async function () {
     $(document).trigger(constants.EVENT_CONFIG_RESET);
-    return dataService
-        .getGrids()
-        .then((grids) => {
-            if (!grids || grids.length === 0) {
-                return Promise.resolve();
-            }
-            return databaseService.bulkDelete(grids);
-        })
-        .then(() => {
-            localStorageService.saveUserSettings({originGridsetFilename: '', isEmpty: true}, localStorageService.getAutologinUser());
-            return saveGlobalGridId('');
-        });
-};
+    let deleteGrids = await databaseService.getObjectsForDeletion(GridData);
+    let deleteDicts = await databaseService.getObjectsForDeletion(Dictionary);
+    let currentMetadata = await dataService.getMetadata();
+    let allMetadataObjects = await databaseService.getObjectsForDeletion(MetaData);
+    let deleteMetadata = allMetadataObjects.filter(metadataObject => metadataObject.id !== currentMetadata.id);
+    let allDeleteObjects = deleteGrids.concat(deleteDicts).concat(deleteMetadata);
 
-/**
- * deletes all dictionaries
- * @return {Promise<void>}
- */
-dataService.deleteAllDictionaries = async function () {
-    let dicts = await dataService.getDictionaries();
-    if (dicts && dicts.length > 0) {
-        await databaseService.bulkDelete(dicts);
-    }
-};
+    await databaseService.bulkDelete(allDeleteObjects);
+    localStorageService.saveUserSettings({originGridsetFilename: '', isEmpty: true}, localStorageService.getAutologinUser());
+    return saveGlobalGridId('');
+}
 
 /**
  * Gets a single element of a grid.
@@ -291,14 +284,13 @@ dataService.getMetadata = function () {
     return new Promise((resolve) => {
         databaseService.getObject(MetaData).then((result) => {
             let returnValue = null;
-            if (!result) {
-                returnValue = new MetaData();
-            } else if (Array.isArray(result)) {
+            if (Array.isArray(result)) {
                 result.sort((a, b) => a.id.localeCompare(b.id)); // always prefer older metadata objects
                 returnValue = result[0];
             } else {
                 returnValue = result;
             }
+            returnValue = returnValue || JSON.parse(JSON.stringify(metadataFallback));
             if (!localStorageService.getAppSettings().syncNavigation) {
                 let localMetadata = localStorageService.getUserSettings().metadata;
                 if (localMetadata) {
@@ -391,7 +383,7 @@ dataService.downloadBackupToFile = async function () {
         exportOnlyCurrentLang: false,
         exportDictionaries: true,
         exportUserSettings: true,
-        filename: `${user}_${util.getCurrentDateTimeString()}_asterics-grid-full-backup`
+        filename: `${user}_${util.getCurrentDateTimeString()}_asterics-aac-full-backup`
     });
 };
 
@@ -434,7 +426,7 @@ dataService.getBackupData = async function (gridIds, options = {}) {
                 elem.label[contentLang] = elem.label[contentLang] || elem.label[contentLangBase];
                 Object.keys(elem.label).forEach((key) => key === contentLang || delete elem.label[key]);
                 for (let action of elem.actions) {
-                    if (action.speakText) {
+                    if (action.speakText && !util.isString(action.speakText)) {
                         Object.keys(action.speakText).forEach(
                             (key) => key === contentLang || delete action.speakText[key]
                         );
@@ -495,7 +487,7 @@ dataService.downloadToFile = async function (gridIds, options = {}) {
     let filenameBase =
         options.filename ||
         (backupData.grids.length > 1
-            ? `asterics-grid-backup`
+            ? `asterics-aac-backup`
             : i18nService.getTranslation(backupData.grids[0].label));
     let filename = filenameBase + postfix;
     FileSaver.saveAs(blob, filename);
@@ -522,7 +514,7 @@ dataService.convertFileToImportData = async function (file, options = {}) {
             return null;
         }
         if (!importData || (!importData.grids && !importData.metadata && !importData.dictionaries)) {
-            log.warn("data doesn't contain AsTeRICS Grid config");
+            log.warn("data doesn't contain Asterics AAC config");
             return null;
         }
     } else if (fileUtil.isObfFile(file)) {
@@ -575,12 +567,13 @@ dataService.importBackupUploadedFile = async function (file, progressFn) {
     if (!importData) {
         progressFn(100);
         MainVue.setTooltip(i18nService.t('backupFileDoesntContainData'), { msgType: 'warn' });
-        return;
+        return null;
     }
-    return dataService.importBackupData(importData, {
+    await dataService.importBackupData(importData, {
         progressFn: progressFn,
         generateGlobalGrid: fileUtil.isObzFile(file)
     });
+    return importData;
 };
 
 dataService.importBackupFromPreview = async function(preview, options = {}) {
@@ -632,8 +625,7 @@ dataService.importBackupData = async function (importData, options) {
     options.filename = options.filename || '';
     if (!options.skipDelete) {
         options.progressFn(20, i18nService.t('deletingGrids'));
-        await dataService.deleteAllGrids();
-        await dataService.deleteAllDictionaries();
+        await dataService.resetUserData();
     }
     localStorageService.saveUserSettings({originGridsetFilename: options.filename, isEmpty: false}, localStorageService.getAutologinUser());
     options.progressFn(30, i18nService.t('encryptingAndSavingGrids'));

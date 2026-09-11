@@ -42,8 +42,8 @@
                 </i18n>
             </div>
         </div>
-        <div class="srow content d-flex" v-if="renderGridData && renderGridData.gridElements.length > 0" style="min-height: 0">
-            <app-grid-display id="grid-container" :grid-data="renderGridData" :metadata="metadata"/>
+        <div class="srow content d-flex" v-if="showGrid && renderGridData && renderGridData.gridElements.length > 0" style="min-height: 0">
+            <app-grid-display id="grid-container" :grid-data="renderGridData" :metadata="metadata" :elem-css-fn="(elem) => gridUtil.getElemBackgroundCss(elem, renderGridData, globalGridData, metadata.colorConfig.gridBackgroundColor)"/>
         </div>
     </div>
 </template>
@@ -109,6 +109,7 @@
             return {
                 globalGridData: null,
                 renderGridData: null,
+                showGrid: false,
                 metadata: null,
                 updatedMetadataDoc: null,
                 scanner: null,
@@ -125,7 +126,8 @@
                 MainVue: MainVue,
                 highlightTimeoutHandler: null,
                 highlightedElementId: null,
-                systemActionService: systemActionService
+                systemActionService: systemActionService,
+                gridUtil: gridUtil
             }
         },
         components: {
@@ -291,9 +293,8 @@
                         areService.uploadAndStartModel(areModel.dataBase64, gridUtil.getAREURL(gridData), areModel.fileName);
                     }
 
-                    // these two lines before recalculateRenderGrid since it changes gridData!
+                    // this line before recalculateRenderGrid since it changes gridData!
                     let updateThumbnail = gridUtil.hasOutdatedThumbnail(gridData) && !this.skipThumbnailCheck;
-                    let newHash = updateThumbnail ? gridUtil.getHash(gridData) : null;
 
                     await this.recalculateRenderGrid(gridData);
                     Router.addToGridHistory(this.renderGridData.id);
@@ -303,7 +304,7 @@
                             let screenshot = await imageUtil.getScreenshot("#grid-container");
                             let thumbnail = {
                                 data: screenshot,
-                                hash: newHash
+                                shouldUpdate: false
                             };
                             dataService.saveThumbnail(this.renderGridData.id, thumbnail);
                         })
@@ -367,7 +368,8 @@
                 let hasUpdatedGlobalGrid = updatedDocs.filter(doc => (this.metadata && doc.id === this.metadata.globalGridId)).length > 0;
                 this.updatedMetadataDoc = updatedDocs.filter(doc => (vueApp.metadata && doc.id === vueApp.metadata.id))[0] || this.updatedMetadataDoc;
                 if (updatedGridDoc) {
-                    vueApp.loadGrid(updatedGridDoc, { continueInputMethods: true, forceReload: true });
+                    let gridDoc = await dataService.getGrid(updatedGridDoc.id); // get again in order to be sure to have correct revision on conflicts
+                    vueApp.loadGrid(gridDoc, { continueInputMethods: true, forceReload: true });
                 } else if (hasUpdatedGlobalGrid) {
                     let gridData = await dataService.getGrid(vueApp.renderGridData.id, false, true);
                     this.globalGridData = await dataService.getGlobalGrid();
@@ -402,7 +404,12 @@
             async recalculateRenderGrid(gridData) {
                 // attention: gridData also changes because of "noDeepCopy: true"
                 // just using this.renderGridData for clarity
+                this.showGrid = false;
                 let globalGrid = null;
+                gridData = gridUtil.fillFreeSpaces(gridData, GridElement.ELEMENT_TYPE_UI_FILLER);
+                if (gridUtil.hasDynamicGridPlaceholder(this.globalGridData)) {
+                    this.globalGridData = gridUtil.fillFreeSpaces(this.globalGridData, GridElement.ELEMENT_TYPE_UI_FILLER);
+                }
                 if (gridData.showGlobalGrid) {
                     globalGrid = this.globalGridData;
                     if (gridData.globalGridId) { // custom global grid
@@ -415,6 +422,7 @@
                 } else {
                     this.renderGridData = gridData;
                 }
+                this.renderGridData = gridUtil.adaptFirstRowHeight(this.renderGridData, this.metadata.firstRowHeightFactor);
                 this.renderGridData.minColumnCount = gridUtil.getWidthWithBounds(this.renderGridData);
                 this.renderGridData.rowCount = gridUtil.getHeightWithBounds(this.renderGridData);
                 this.renderGridData.gridElements = this.renderGridData.gridElements.filter(e => !e.hidden);
@@ -440,6 +448,7 @@
                         }
                     });
                 }
+                this.showGrid = true;
                 stateService.setCurrentGrid(this.renderGridData);
             },
             onSidebarOpen() {
@@ -508,6 +517,7 @@
             }
             metadata.fullscreen = metadata.fullscreen === undefined ? urlParamService.isDemoMode() && dataService.getCurrentUser() === constants.LOCAL_DEMO_USERNAME : metadata.fullscreen;
             metadata.fullscreen = urlParamService.isFullscreen(true) ? true : metadata.fullscreen;
+            metadata.fullscreen = metadata.fullscreen && util.isFullscreen();
             metadata.locked = urlParamService.isLocked(true) ? true : metadata.locked;
             metadata.inputConfig.scanEnabled = urlParamService.isScanningEnabled() ? true : metadata.inputConfig.scanEnabled;
             metadata.inputConfig.dirEnabled = urlParamService.isDirectionEnabled() ? true : metadata.inputConfig.dirEnabled;

@@ -10,6 +10,10 @@ import { constants } from './constants.js';
 import { GridActionARE } from '../model/GridActionARE';
 import { encryptionService } from '../service/data/encryptionService';
 import { gridLayoutUtil } from '../../vue-components/grid-layout/utils/gridLayoutUtil';
+import { localStorageService } from '../service/data/localStorageService';
+import { util } from './util';
+
+const USED_LOCALES_KEY = 'AG_USED_LOCALES';
 
 let gridUtil = {};
 
@@ -57,6 +61,59 @@ gridUtil.sortGridElements = function (elements) {
         return a.x - b.x;
     });
 };
+
+/**
+ * sorts grids in order to put home grid first. can also be used with graph elements, see gridUtil.getGraphList()
+ * @param elems array of elements to sort (grids or graph elements)
+ * @param homeGridId the id of the home grid
+ * @param selectedId optional additional ID to sort after home grid
+ * @return {*} sorted array
+ */
+gridUtil.sortGridsByHomeId = function (elems, homeGridId, selectedId = null) {
+    if (!homeGridId) {
+        return elems;
+    }
+    return elems.sort((a, b) => {
+        a = a.grid ? a.grid : a; // make it work also with graph elements, see gridUtil.getGraphList()
+        b = b.grid ? b.grid : b;
+        if (a.id === homeGridId) {
+            return -1;
+        }
+        if (b.id === homeGridId) {
+            return 1;
+        }
+        if (a.id === selectedId) {
+            return -1;
+        }
+        if (b.id === selectedId) {
+            return 1;
+        }
+        return 0;
+    });
+}
+
+/**
+ * sorts grids alphabetically by label, can also be used with graph elements, see gridUtil.getGraphList()
+ * @param elems array of elements to sort (grids or graph elements)
+ * @return {*} sorted array
+ */
+gridUtil.sortGridsByLabel = function (elems) {
+    return elems.sort((a, b) => {
+        a = a.grid ? a.grid : a; // make it work also with graph elements, see gridUtil.getGraphList()
+        b = b.grid ? b.grid : b;
+        return i18nService.getTranslation(a.label).localeCompare(i18nService.getTranslation(b.label), undefined, {numeric: true});
+    });
+}
+
+/**
+ * sorts grids first by label and then by home grid ID.
+ * @see gridUtil.sortGridsByLabel()
+ * @see gridUtil.sortGridsByHomeId()
+ */
+gridUtil.sortGrids = function (elems, homeGridId, selectedId) {
+    elems = gridUtil.sortGridsByLabel(elems);
+    return gridUtil.sortGridsByHomeId(elems, homeGridId, selectedId);
+}
 
 /**
  * generates a global grid with elements "home", "back", input field, "backspace" and "clear"
@@ -135,10 +192,17 @@ gridUtil.generateGlobalGrid = function (locale, options) {
         }),
         actions: [new GridActionCollectElement({ action: GridActionCollectElement.COLLECT_ACTION_CLEAR })]
     });
+    let elementPlaceholder = new GridElement({
+        type: GridElement.ELEMENT_TYPE_DYNAMIC_GRID_PLACEHOLDER,
+        width: 15,
+        height: 5,
+        x: 0,
+        y: 1
+    });
     return new GridData({
         label: i18nService.getTranslationObject(i18nService.t('globalGrid'), locale),
-        gridElements: [elementHome, elementBack, elementCollect, elementSpeak, elementBackspace, elementClear],
-        rowCount: 3
+        gridElements: [elementHome, elementBack, elementCollect, elementSpeak, elementBackspace, elementClear, elementPlaceholder],
+        rowCount: 6
     });
 };
 
@@ -215,10 +279,25 @@ gridUtil.getFreeCoordinates = function (gridData) {
     });
 };
 
-gridUtil.getFillElements = function (gridData) {
+gridUtil.getFillElements = function (gridData, elementType = GridElement.ELEMENT_TYPE_NORMAL) {
     let freeCoordinates = gridUtil.getFreeCoordinates(gridData);
-    return freeCoordinates.map((xy) => new GridElement({ x: xy.x, y: xy.y }));
+    return freeCoordinates.map((xy) => new GridElement({ x: xy.x, y: xy.y, type: elementType }));
 };
+
+/**
+ * fills the given grid data with new elements of the given type, so no empty spaces afterwards
+ * @param gridData
+ * @param elementType
+ * @returns {*|null}
+ */
+gridUtil.fillFreeSpaces = function(gridData, elementType = GridElement.ELEMENT_TYPE_NORMAL) {
+    if (!gridData) {
+        return null;
+    }
+    let fillElements = gridUtil.getFillElements(gridData, elementType);
+    gridData.gridElements = gridData.gridElements.concat(JSON.parse(JSON.stringify(fillElements)));
+    return gridData;
+}
 
 gridUtil.updateOrAddGridElement = function (gridData, updatedGridElement) {
     updatedGridElement = JSON.parse(JSON.stringify(updatedGridElement));
@@ -283,65 +362,31 @@ gridUtil.getGraphList = function (grids, removeGridId, orderByName) {
 };
 
 /**
- * returns an array of all possible paths through the grid graph given a start element
- * @param startGraphElem the graph element to start
- * @param paths internal, used for recursion
- * @param currentPath internal, used for recursion
- * @param existingPathEndsMap internal, used for recursion, a map for counting how often a specific grid was the
- *                            last grid of an existing path. So map[gridId] === 3 means that in the current calculated
- *                            paths there are 3 paths that have grid with "gridId" as last element
- * @return {*[]|number} an array containing all possible paths through the graph with the given
- *                      start element.
- *                      e.g. [[startElem.grid, childGrid, childOfChild, ...],
- *                            [startElem.grid, otherChild, ...], ...]
- */
-gridUtil.getAllPaths = function (startGraphElem, paths, currentPath, existingPathEndsMap = {}) {
-    let MAX_PATHS_TO_SAME_GRID = 1;
-    if (!startGraphElem) {
-        return [];
-    }
-    paths = paths || [];
-    currentPath = currentPath || [];
-    if (currentPath.includes(startGraphElem)) {
-        addPath();
-        return paths;
-    }
-    currentPath.push(startGraphElem);
-    if (startGraphElem.children.length === 0) {
-        addPath();
-        return paths;
-    }
-    let lastId = currentPath[currentPath.length - 1].grid.id;
-    if (existingPathEndsMap[lastId] >= MAX_PATHS_TO_SAME_GRID) {
-        addPath();
-        return paths;
-    }
-    for (let child of startGraphElem.children) {
-        gridUtil.getAllPaths(child, paths, currentPath.concat([]), existingPathEndsMap);
-    }
-    return paths;
-
-    function addPath() {
-        paths.push(currentPath);
-        let lastId = currentPath[currentPath.length - 1].grid.id;
-        existingPathEndsMap[lastId] = existingPathEndsMap[lastId] ? existingPathEndsMap[lastId] + 1 : 1;
-    }
-}
-
-/**
  * returns a map [gridID] => [shortest path from start elem] for all existing grids that can be reached
- * from startElem
+ * from startElem using Breadth-First Search for high performance.
  * @param startGraphElem start element, one that was returned by gridUtil.getGraphList
  * @return {{}}
  */
 gridUtil.getIdPathMap = function (startGraphElem) {
-    let allPaths = gridUtil.getAllPaths(startGraphElem);
     let idPathMap = {};
-    for (let path of allPaths) {
-        for (let i = 0; i < path.length; i++) {
-            let elem = path[i];
-            if (!idPathMap[elem.grid.id] || idPathMap[elem.grid.id].length > i + 1) {
-                idPathMap[elem.grid.id] = path.slice(0, i + 1);
+    if (!startGraphElem) {
+        return idPathMap;
+    }
+
+    // Initialize queue with the starting element
+    let queue = [ [startGraphElem] ];
+    idPathMap[startGraphElem.grid.id] = [startGraphElem];
+
+    while (queue.length > 0) {
+        let currentPath = queue.shift();
+        let currentElem = currentPath[currentPath.length - 1];
+
+        for (let child of currentElem.children) {
+            // Only process if we haven't found a path to this grid yet
+            if (!idPathMap[child.grid.id]) {
+                let newPath = currentPath.concat([child]);
+                idPathMap[child.grid.id] = newPath;
+                queue.push(newPath);
             }
         }
     }
@@ -471,42 +516,100 @@ gridUtil.mergeGrids = function(grid, globalGrid, options = {}) {
     if (grid && globalGrid && globalGrid.gridElements && globalGrid.gridElements.length > 0) {
         globalGrid = JSON.parse(JSON.stringify(globalGrid));
         grid = options.noDeepCopy ? grid : JSON.parse(JSON.stringify(grid));
-        let autowidth = true;
-        let heightPercentage = options.globalGridHeightPercentage
-            ? options.globalGridHeightPercentage / 100
-            : 0.15;
-        let heightFactorNormal = 1;
-        let heightFactorGlobal = 1;
-        if (gridUtil.getHeight(globalGrid) === 1) {
-            let height = gridUtil.getHeightWithBounds(grid);
-            heightFactorGlobal = (heightPercentage * height) / (1 - heightPercentage);
-            heightFactorNormal = 1 / (height * heightPercentage) - 1 / height;
-            heightFactorGlobal = Math.round(heightPercentage * 100);
-            heightFactorNormal = Math.round(((1 - heightPercentage) / height) * 100);
-        }
-        let offset = gridUtil.getOffset(globalGrid);
-        let factorGrid = autowidth ? gridUtil.getWidth(globalGrid) - offset.x : 1;
-        let factorGlobal = autowidth ? gridUtil.getWidthWithBounds(grid) : 1;
-        globalGrid.gridElements.forEach((gridElement) => {
-            gridElement.width *= factorGlobal;
-            gridElement.x *= factorGlobal;
-            if (gridElement.y === 0) {
-                gridElement.height *= heightFactorGlobal;
+        let placeholderElem = globalGrid.gridElements.find(e => e.type === GridElement.ELEMENT_TYPE_DYNAMIC_GRID_PLACEHOLDER);
+        if (placeholderElem) {
+            globalGrid.gridElements = globalGrid.gridElements.filter(e => e.type !== GridElement.ELEMENT_TYPE_DYNAMIC_GRID_PLACEHOLDER);
+            let placeholderW = placeholderElem.width;
+            let placeholderH = placeholderElem.height;
+            let gridW = gridUtil.getWidthWithBounds(grid);
+            let gridH = gridUtil.getHeightWithBounds(grid);
+            for (let globalElem of globalGrid.gridElements) {
+                globalElem.width *= gridW;
+                globalElem.x *= gridW;
+                globalElem.height *= gridH;
+                globalElem.y *= gridH;
             }
-        });
-        grid.gridElements.forEach((gridElement) => {
-            gridElement.width *= factorGrid;
-            gridElement.x *= factorGrid;
-            gridElement.x += offset.x * factorGlobal;
-            gridElement.y = offset.y * heightFactorGlobal + gridElement.y * heightFactorNormal;
-            gridElement.height *= heightFactorNormal;
-        });
-        grid.rowCount *= heightFactorNormal;
-        grid.rowCount += offset.y * heightFactorGlobal;
+            globalGrid.minColumnCount *= gridW;
+            globalGrid.rowCount *= gridH;
+            let offsetX = placeholderElem.x * gridW;
+            let offsetY = placeholderElem.y * gridH;
+            for (let gridElem of grid.gridElements) {
+                gridElem.width *= placeholderW;
+                gridElem.x = gridElem.x * placeholderW + offsetX;
+                gridElem.height *= placeholderH;
+                gridElem.y = gridElem.y * placeholderH + offsetY;
+            }
+            grid.minColumnCount *= placeholderW;
+            grid.rowCount *= placeholderH;
+            grid.rowCount = Math.max(grid.rowCount + offsetY, globalGrid.rowCount);
+            grid.minColumnCount = Math.max(grid.minColumnCount + offsetX, globalGrid.minColumnCount);
+        } else {
+            let autowidth = true;
+            let heightPercentage = options.globalGridHeightPercentage
+                ? options.globalGridHeightPercentage / 100
+                : 0.15;
+            let heightFactorNormal = 1;
+            let heightFactorGlobal = 1;
+            if (gridUtil.getHeight(globalGrid) === 1) {
+                let height = gridUtil.getHeightWithBounds(grid);
+                heightFactorGlobal = (heightPercentage * height) / (1 - heightPercentage);
+                heightFactorNormal = 1 / (height * heightPercentage) - 1 / height;
+                heightFactorGlobal = Math.round(heightPercentage * 100);
+                heightFactorNormal = Math.round(((1 - heightPercentage) / height) * 100);
+            }
+            let offset = gridUtil.getOffset(globalGrid);
+            let factorGrid = autowidth ? gridUtil.getWidth(globalGrid) - offset.x : 1;
+            let factorGlobal = autowidth ? gridUtil.getWidthWithBounds(grid) : 1;
+            globalGrid.gridElements.forEach((gridElement) => {
+                gridElement.width *= factorGlobal;
+                gridElement.x *= factorGlobal;
+                if (gridElement.y === 0) {
+                    gridElement.height *= heightFactorGlobal;
+                }
+            });
+            grid.gridElements.forEach((gridElement) => {
+                gridElement.width *= factorGrid;
+                gridElement.x *= factorGrid;
+                gridElement.x += offset.x * factorGlobal;
+                gridElement.y = offset.y * heightFactorGlobal + gridElement.y * heightFactorNormal;
+                gridElement.height *= heightFactorNormal;
+            });
+            grid.rowCount *= heightFactorNormal;
+            grid.rowCount += offset.y * heightFactorGlobal;
+        }
         grid.gridElements = globalGrid.gridElements.concat(grid.gridElements);
     }
     return grid;
 }
+
+/**
+ * @param grid
+ * @param firstRowHeightFactor factor to increase/decrease height of first row
+ * @returns {*} the adapted grid
+ */
+gridUtil.adaptFirstRowHeight = function(grid, firstRowHeightFactor = 1) {
+    let baseHeightFactor = 10;
+    let factorProp = util.limitValue(firstRowHeightFactor, 0.1, 2, 1);
+    firstRowHeightFactor = Math.round(baseHeightFactor * factorProp);
+    let firstRowElems = grid.gridElements.filter(e => e.y === 0);
+    let maxFirstRowHeight = firstRowElems.reduce((total, elem) => Math.max(total, elem.height), 0) || 1;
+    firstRowElems = grid.gridElements.filter(e => e.y + e.height <= maxFirstRowHeight);
+    let otherElems = grid.gridElements.filter(e => !firstRowElems.includes(e));
+    if (firstRowElems.length > 0 && factorProp !== 1) {
+        let maxFirstHeight = Math.max(...firstRowElems.map(e => e.height));
+        let otherOffset = (firstRowHeightFactor - baseHeightFactor) * maxFirstHeight;
+        for (let elem of firstRowElems) {
+            elem.height *= firstRowHeightFactor;
+            elem.y *= firstRowHeightFactor;
+        }
+        for (let elem of otherElems) {
+            elem.height *= baseHeightFactor;
+            elem.y *= baseHeightFactor;
+            elem.y += otherOffset;
+        }
+    }
+    return grid;
+};
 
 gridUtil.getAREFirstAction = function(gridData) {
     let allActions = [];
@@ -535,7 +638,7 @@ gridUtil.hasAREModel = function(gridData) {
 };
 
 gridUtil.hasOutdatedThumbnail = function(gridData) {
-    return !gridData.thumbnail || !gridData.thumbnail.data || gridData.thumbnail.hash !== gridUtil.getHash(gridData);
+    return !gridData.thumbnail || !gridData.thumbnail.data || gridData.thumbnail.shouldUpdate;
 };
 
 gridUtil.getHash = function(gridData) {
@@ -714,6 +817,81 @@ gridUtil.getCursorType = function(metadata, defaultCursorType = "default") {
     return 'none';
 };
 
+/**
+ * returns CSS needed for element background, depending on in from where the element comes (global or normal grid)
+ * @param elem
+ * @param dynamicGrid
+ * @param globalGrid
+ * @param defaultBackground
+ * @returns {string|string}
+ */
+gridUtil.getElemBackgroundCss = function(elem, childGrid = {}, globalGrid, defaultBackground = '') {
+    let fromGlobal = globalGrid && !!globalGrid.gridElements.find(e => e.id === elem.id);
+    let backgroundColor = fromGlobal ? globalGrid.backgroundColor : childGrid.backgroundColor;
+    backgroundColor = backgroundColor || defaultBackground || constants.DEFAULT_GRID_BACKGROUND_COLOR;
+    return backgroundColor ? `background-color: ${backgroundColor};` : '';
+};
+
+gridUtil.getFirstWordForm = function(element, lang = null) {
+    let object = gridUtil.getFirstWordFormObject(element, lang);
+    return object ? object.value : null;
+};
+
+gridUtil.getFirstWordFormObject = function(element, lang) {
+    let forms = gridUtil.getWordFormsForLang(element, lang);
+    return forms.length > 0 ? forms[0] : null;
+};
+
+/**
+ * returns a list of all word forms for the given language
+ * If word forms for exact given language (localized, e.g. "en-us") are not existing,
+ * word forms for base language (e.g. "en") or other localized languages (e.g. "en-gb") are returned.
+ * Word forms without language are returned always.
+ *
+ * @param element
+ * @param lang
+ * @returns {T[]}
+ */
+gridUtil.getWordFormsForLang = function(element, lang = '') {
+    lang = lang || i18nService.getContentLang();
+    let formsLang = element.wordForms.filter((form) => !form.lang || form.lang === lang);
+    let formsBaseLang = element.wordForms.filter((form) => !form.lang || i18nService.getBaseLang(form.lang) === i18nService.getBaseLang(lang));
+    return formsLang.length > 0 ? formsLang : formsBaseLang;
+};
+
+/**
+ * returns the label to display for a given element, also  taking word forms into account
+ * @param element
+ * @returns {string|*}
+ */
+gridUtil.getDisplayLabel = function(element) {
+    return gridUtil.getFirstWordForm(element) || i18nService.getTranslation(element.label);
+}
+
+gridUtil.hasDynamicGridPlaceholder = function(globalGrid) {
+    if (!globalGrid) {
+        return false;
+    }
+    return !!globalGrid.gridElements.find(e => e.type === GridElement.ELEMENT_TYPE_DYNAMIC_GRID_PLACEHOLDER);
+};
+
+/**
+ * returns the ID of the grid the given elements navigates to
+ * @param element the element to check
+ * @param homeGridId the ID of the home grid in the current configuration
+ * @return {[String | StringConstructor]|*|null} the ID of the grid the element navigates to or null
+ */
+gridUtil.getNavigateGridId = function (element, homeGridId) {
+    let navAction = element.actions.find((action) => action.modelName === GridActionNavigate.getModelName());
+    if (!navAction) {
+        return null;
+    }
+    if (navAction.navType === GridActionNavigate.NAV_TYPES.TO_HOME) {
+        return homeGridId;
+    }
+    return navAction.toGridId;
+}
+
 function getAllChildrenRecursive(gridGraphList, gridId) {
     let graphElem = gridGraphList.filter((elem) => elem.grid.id === gridId)[0];
     return getAllChildrenRecursiveGraphElement(graphElem).map(graphElem => graphElem.grid);
@@ -747,6 +925,14 @@ function getNavigationIds(grid) {
         })
         .filter((a) => !!a);
 }
+
+gridUtil.getUsedLocales = function (gridData) {
+    let currentGridLocales = gridUtil.getGridLangs(gridData);
+    let cachedLocales = localStorageService.getJSON(USED_LOCALES_KEY) || [];
+    let mergedLocales = [...new Set([...currentGridLocales, ...cachedLocales])];
+    localStorageService.saveJSON(USED_LOCALES_KEY, mergedLocales);
+    return mergedLocales;
+};
 
 function getGridElements(gridDataOrElements) {
     let gridElements = gridDataOrElements.gridElements ? gridDataOrElements.gridElements : gridDataOrElements;

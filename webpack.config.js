@@ -4,7 +4,7 @@ const VueLoaderPlugin = require('vue-loader/lib/plugin');
 module.exports = env => {
     let buildDir = 'app/build/';
     let entryScript = './src/js/mainScript.js';
-    let outputFilename = 'asterics-grid.bundle.js';
+    let outputFilename = 'asterics-aac.bundle.js';
     let mode = env && env.production ? 'production' : 'development';
 
     let scssRule = {
@@ -16,6 +16,17 @@ module.exports = env => {
         test: /\.vue$/,
         loader: 'vue-loader',
         options: { sourceMap: mode !== "production" }
+    };
+
+    var babelRule = {
+        test: /\.m?js$/,
+        include: [
+            path.resolve(__dirname, 'src'),
+            path.resolve(__dirname, 'node_modules/date-fns')
+        ],
+        use: {
+            loader: 'babel-loader'
+        }
     };
 
     let publicPath = env.production ? buildDir : `/${buildDir}`
@@ -54,7 +65,7 @@ module.exports = env => {
             PouchDB: 'PouchDB'
         },
         module: {
-            rules: [scssRule, vueRule]
+            rules: [scssRule, vueRule, babelRule]
         }
     };
 };
