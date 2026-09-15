@@ -64,7 +64,7 @@ speechService.speak = async function (textOrOject, options = {}) {
     let text = null;
     let isString = typeof textOrOject === 'string';
     let isSpeaking = await speechService.isSpeaking();
-    if (userSettings.voiceConfig.waitForSpeechToFinish && (isSpeaking || (_speakArrayRunId && !options.dontStop))) {
+    if (userSettings.voiceConfig.waitForSpeechToFinish && (isSpeaking && !options.dontStop)) {
         return;
     }
     if (!textOrOject || (!isString && Object.keys(textOrOject).length === 0)) {
@@ -98,7 +98,6 @@ speechService.speak = async function (textOrOject, options = {}) {
     $(document).trigger(constants.EVENT_SPEAKING_TEXT, [text]);
     if (!options.dontStop) {
         speechService.stopSpeaking();
-        _speakArrayRunId = null;
     }
     let voices = getVoicesById(preferredVoiceId) || getVoicesByLang(langToUse);
     let nativeVoices = voices.filter((voice) => voice.type === constants.VOICE_TYPE_NATIVE);
@@ -222,6 +221,7 @@ speechService.stopSpeaking = function () {
     currentSpeakArray = [];
     isSpeakingNative = false;
     startedSpeakingRV = false;
+    _speakArrayRunId = null;
     if (speechService.nativeSpeechSupported()) {
         window.speechSynthesis.cancel();
     }
