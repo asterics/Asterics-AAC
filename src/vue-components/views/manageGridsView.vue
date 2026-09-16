@@ -107,7 +107,7 @@
 
         <no-grids-page v-if="graphList && graphList.length === 0 && !showLoading" :restore-backup-handler="importBackup" :import-custom-handler="() => importModal.show = true" :reset-global-grid="this.resetGlobalGrid"></no-grids-page>
         <grid-link-modal v-if="linkModal.show" :grid-from-prop="linkModal.gridFrom" :grid-to-prop="linkModal.gridTo" @close="linkModal.show = false" @reload="reload(linkModal.gridFrom.id)"></grid-link-modal>
-        <export-pdf-modal v-if="pdfModal.show" :grids-data="grids" :print-grid-id="pdfModal.printGridId" @close="pdfModal.show = false; pdfModal.printGridId = null;"></export-pdf-modal>
+        <export-pdf-modal v-if="pdfModal.show" :grids-data="grids" :print-grid-id="pdfModal.printGridId" :metadata="metadata" @close="pdfModal.show = false; pdfModal.printGridId = null;"></export-pdf-modal>
         <export-modal v-if="backupModal.show" :grids-data="grids" :export-options="backupModal.exportOptions" @close="backupModal.show = false"></export-modal>
         <import-modal v-if="importModal.show" @close="importModal.show = false" :reload-fn="reload"></import-modal>
         <div class="bottom-spacer"></div>
@@ -167,7 +167,7 @@
                 SELECT_VALUES: SELECT_VALUES,
                 ORDER_VALUES: ORDER_VALUES,
                 selectValue: null,
-                orderValue: localStorageService.get(ORDER_MODE_KEY) || ORDER_VALUES.CONNECTION_COUNT,
+                orderValue: localStorageService.get(ORDER_MODE_KEY) || ORDER_VALUES.ALPHABET,
                 linkModal: {
                     show: false,
                     gridFrom: null,
@@ -264,12 +264,7 @@
             exportCustom(gridId) {
                 if (gridId) {
                     this.backupModal.exportOptions.gridId = gridId;
-                    this.backupModal.exportOptions.exportDictionaries = false;
-                    this.backupModal.exportOptions.exportUserSettings = false;
-                    this.backupModal.exportOptions.exportGlobalGrid = false;
-                } else {
-                    this.backupModal.exportOptions = {}
-                }
+                } 
                 this.backupModal.show = true;
             },
             exportToPdf(gridId) {
@@ -362,12 +357,11 @@
                 let id = this.selectedGraphElement ? this.selectedGraphElement.grid.id : null;
                 this.reload(id);
             },
-            deleteAll() {
-                if (confirm(i18nService.t('doYouReallyWantDeleteAllGrids'))) {
+            async resetData() {
+                if (confirm(i18nService.t('doYouReallyWantToResetConfig'))) {
                     this.showLoading = true;
-                    dataService.deleteAllGrids().then(() => {
-                        this.reload();
-                    });
+                    await dataService.resetUserData();
+                    this.reload();
                 }
             },
             async deleteImages() {
@@ -540,13 +534,13 @@
                 }
                 switch (this.orderValue) {
                     case this.ORDER_VALUES.ALPHABET:
-                        elems = elems.sort((a, b) => i18nService.getTranslation(a.grid.label).localeCompare(i18nService.getTranslation(b.grid.label)));
+                        elems = gridUtil.sortGridsByLabel(elems);
                         break;
                     case this.ORDER_VALUES.CONNECTION_COUNT:
                         elems = elems = elems.sort((a, b) => b.allRelatives.length - a.allRelatives.length);
                         break;
                 }
-                return elems;
+                return gridUtil.sortGridsByHomeId(elems, this.metadata.homeGridId);
             }
         },
         created() {
@@ -725,7 +719,7 @@
                     break;
                 }
                 case CONTEXT_RESET: {
-                    vueApp.deleteAll();
+                    vueApp.resetData();
                     break;
                 }
             }

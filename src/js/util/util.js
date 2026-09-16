@@ -69,11 +69,32 @@ util.throttle = function (fn, args, minPauseMs, key) {
 /**
  * copies the given text to clipboard
  * @param text
+ * @param skipPermissionCheck if true, manual permission query is skipped
  */
-util.copyToClipboard = function copyTextToClipboard(text) {
+util.copyToClipboard = async function (text, skipPermissionCheck = false) {
     if (!text) {
         return;
     }
+    lastClipboardData = text;
+
+    // 1. Try modern Async Clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (err) {
+            // 2. If permission check hasn't been skipped yet, query permission and retry recursively
+            if (!skipPermissionCheck) {
+                log.info('Checking permissions before retrying copy...');
+                const hasPermission = await util.checkPermission('clipboard-write');
+                if (hasPermission) {
+                    // Recursive call with skipPermissionCheck = true to avoid infinite loops
+                    return await util.copyToClipboard(text, true);
+                }
+            }
+        }
+    }
+
     let textArea = document.createElement('textarea');
     textArea.value = text;
     document.body.appendChild(textArea);
@@ -86,7 +107,6 @@ util.copyToClipboard = function copyTextToClipboard(text) {
     } catch (err) {
         log.warn('Unable to copy to clipboard.');
     }
-    lastClipboardData = text;
     document.body.removeChild(textArea);
 };
 
@@ -216,6 +236,65 @@ util.getGridElementsFromClipboard = async function() {
     return elements;
 };
 
+util.getClipboardImageAsBase64 = async function () {
+    if (!navigator.clipboard || !navigator.clipboard.read) {
+        log.warn('Clipboard API (read) not supported.');
+        return null;
+    }
+
+    try {
+        const clipboardItems = await navigator.clipboard.read();
+
+        for (const item of clipboardItems) {
+            // Check if any of the available types are images
+            const imageType = item.types.find(type => type.startsWith('image/'));
+
+            if (imageType && constants.ALLOWED_IMG_MIME_TYPES.includes(imageType)) {
+                const blob = await item.getType(imageType);
+                return await blobToBase64(blob);
+            }
+        }
+
+        log.info('No image found in clipboard.');
+        return null;
+    } catch (err) {
+        log.warn('Failed to read clipboard image:', err);
+        return null;
+    }
+};
+
+/**
+ * Safely checks a permission status using navigator.permissions.query.
+ * @param {string} name - The permission name to check (e.g., 'clipboard-write', 'notifications').
+ * @returns {Promise<boolean>} Resolves to true if granted or promptable, false if denied or unsupported.
+ */
+util.checkPermission = async function (name) {
+    if (!navigator.permissions || typeof navigator.permissions.query !== 'function') {
+        return false;
+    }
+
+    try {
+        const permissionStatus = await navigator.permissions.query({ name: name });
+        return permissionStatus.state === 'granted' || permissionStatus.state === 'prompt';
+    } catch (err) {
+        // Catches TypeError in Firefox/Safari when query name is unsupported
+        log.warn(`Permission query for '${name}' is unsupported or failed.`);
+        return false;
+    }
+};
+
+/**
+ * Helper to convert a Blob to a Base64 string
+ */
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
 /**
  * gets an element by given x/y coordinates in the current window
  *
@@ -262,7 +341,7 @@ util.openFullscreen = function () {
 };
 
 util.closeFullscreen = function () {
-    if (!document.fullscreenElement) {
+    if (!util.isFullscreen()) {
         return;
     }
     let closeFn =
@@ -274,6 +353,13 @@ util.closeFullscreen = function () {
         closeFn.call(document);
     }
 };
+
+util.isFullscreen = function () {
+    return !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement
+    );
+}
 
 /**
  * converts HEX or CSS RGB string to RGB array
