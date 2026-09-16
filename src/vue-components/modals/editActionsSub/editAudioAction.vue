@@ -72,7 +72,7 @@ import {dataService} from "../../../js/service/data/dataService.js";
 import {GridActionCollectElement} from "../../../js/model/GridActionCollectElement.js";
 import { imageUtil } from '../../../js/util/imageUtil';
 
-const MAX_RECORD_TIME = 300000;
+const MAX_RECORD_TIME = 90000;
 
 export default {
     props: ['action', 'gridData'],
