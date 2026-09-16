@@ -475,7 +475,7 @@ constants.WORDFORM_TAGS = [
     'INDEFINITE',
     'DEFINITE'
 ];
-constants.MAX_AUDIO_DURATION = 300000;
+constants.MAX_AUDIO_DURATION = 90000;
 constants.MAX_AUDIO_SIZE = 104857600;
-constants.AUDIO_RECORDING_MAX_MS = 300000;
+constants.AUDIO_RECORDING_MAX_MS = 90000;
 export { constants };
