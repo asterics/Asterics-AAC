@@ -21,7 +21,7 @@ let _micVolumeCallbacks = [];
  * @param dataCallback callback function that is called passing recorded data as {base64: base64RecordedData, mimeType: dataMimeType} after recording is stopped
  * @return {Promise<void>} promise that resolves after recording has started, rejected if user doesn't allow it.
  */
-audioUtil.record = async function (dataCallback, maxTime = 300000) {
+audioUtil.record = async function (dataCallback, maxTime = 90000) {
     // see https://web.dev/media-recording-audio/
     if (!dataCallback) {
         return;
