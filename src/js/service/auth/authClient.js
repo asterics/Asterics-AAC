@@ -15,30 +15,14 @@ class AuthClient {
     }
 
     /**
-     * Determines the correct base URL for the request.
-     * - If logged in: Extracts the exact node URL from the assigned user database.
-     * - If not logged in: Picks a random node from the cluster array.
+     * Determines the base URL for the request, picks a random node from the cluster array.
      */
     getBaseUrl() {
-        if (this.session && this.session.userDBs) {
-            const dbUrls = Object.values(this.session.userDBs);
-            if (dbUrls.length > 0) {
-                try {
-                    // Extract the origin (e.g., "https://node3.example.com") from the DB URL
-                    return new URL(dbUrls[0]).origin;
-                } catch (e) {
-                    console.warn("AuthClient: Invalid DB URL in session, falling back to random node.", e);
-                }
-            }
-        }
-
-        // Fallback to random node for unauthenticated requests
         if (!this.serverUrls || this.serverUrls.length === 0) {
             throw new Error('AuthClient: No server URLs configured.');
         }
-
         const randomIndex = Math.floor(Math.random() * this.serverUrls.length);
-        return this.serverUrls[randomIndex].replace(/\/+$/, '');
+        return this.serverUrls[randomIndex];
     }
 
     /**
