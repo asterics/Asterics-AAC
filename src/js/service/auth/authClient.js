@@ -15,13 +15,6 @@ class AuthClient {
     }
 
     /**
-     * Returns the active session object.
-     */
-    getSession() {
-        return this.session;
-    }
-
-    /**
      * Determines the correct base URL for the request.
      * - If logged in: Extracts the exact node URL from the assigned user database.
      * - If not logged in: Picks a random node from the cluster array.
@@ -121,6 +114,37 @@ class AuthClient {
         } finally {
             this.session = null;
         }
+    }
+
+    async deleteUser(user, hashedUserPassword) {
+        if (!this.session || user.toLowerCase() !== this.session.user_id) {
+            log.warn("couldn't delete user - not logged in with the user to delete:", user);
+            return false;
+        }
+
+        try {
+            const response = await this.request('/proxy/request-deletion', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.session.token}:${this.session.password}`
+                },
+                body: JSON.stringify({
+                    username: this.session.user_id,
+                    password: hashedUserPassword
+                })
+            });
+
+            if (!response.ok) {
+                log.warn(`HTTP error! Status: ${response.status}`);
+                return false;
+            }
+
+            const data = await response.json();
+            return !!data.success;
+        } catch (error) {
+            log.error('Error:', error);
+        }
+        return false;
     }
 }
 

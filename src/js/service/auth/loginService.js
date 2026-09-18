@@ -279,40 +279,13 @@ loginService.stopAutoRetryLogin = function () {
  * Deletes user account. AuthClient handles targeting the correct node automatically.
  */
 loginService.deleteOnlineUser = async function(user = '', password) {
-    let session = authClient.getSession();
-    if (!session || user.toLowerCase() !== session.user_id) {
-        log.warn("couldn't delete user - not logged in with the user to delete:", user);
-        return loginService.DELETE_FAILED_GENERAL;
-    }
-
     let hashedUserPassword = localStorageService.getUserSettings(user).password;
     if (password !== DELETE_USER_DEFAULT_PASSWORD && encryptionService.getUserPasswordHash(password) !== hashedUserPassword) {
         return loginService.DELETE_FAILED_WRONG_PASSWORD;
     }
 
-    try {
-        const response = await authClient.request('/proxy/request-deletion', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${session.token}:${session.password}`
-            },
-            body: JSON.stringify({
-                username: session.user_id,
-                password: hashedUserPassword
-            })
-        });
-
-        if (!response.ok) {
-            log.warn(`HTTP error! Status: ${response.status}`);
-            return loginService.DELETE_FAILED_GENERAL;
-        }
-
-        const data = await response.json();
-        return !!data.success ? loginService.DELETE_SUCCESS : loginService.DELETE_FAILED_GENERAL;
-    } catch (error) {
-        console.error('Error:', error);
-    }
-    return loginService.DELETE_FAILED_GENERAL;
+    let success = await authClient.deleteUser(user, hashedUserPassword);
+    return success ? loginService.DELETE_SUCCESS : loginService.DELETE_FAILED_GENERAL;
 };
 
 function loginInternal(user, hashedPassword, saveUser) {
