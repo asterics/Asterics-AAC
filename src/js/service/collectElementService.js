@@ -525,6 +525,9 @@ function getOutputObject(element, options) {
         }
         text = text || wordForm.value;
     }
+    if (!text && !options.dontIncludePronunciation) {
+        text = i18nService.getTranslation(element.pronunciation);
+    }
     if (!text) {
         text = getLabel(element);
     }

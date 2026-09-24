@@ -31,6 +31,7 @@ let initPromise = new Promise(resolve => {
 });
 
 let _waitingSpeakOptions = {};
+let _speakArrayRunId = undefined;
 
 /**
  * speaks given text.
@@ -56,12 +57,16 @@ let _waitingSpeakOptions = {};
  * @param options.rate (optional) rate value to use
  * @param options.progressFn (optional) function where boundary events of the spoken phrase are sent to
  */
-speechService.speak = function (textOrOject, options = {}) {
+speechService.speak = async function (textOrOject, options = {}) {
     options = options || {};
     options.voiceLangIsTextLang = options.voiceLangIsTextLang || _voiceLangIsTextLang;
     let userSettings = localStorageService.getUserSettings();
     let text = null;
     let isString = typeof textOrOject === 'string';
+    let isSpeaking = await speechService.isSpeaking();
+    if (userSettings.voiceConfig.waitForSpeechToFinish && (isSpeaking && !options.dontStop)) {
+        return;
+    }
     if (!textOrOject || (!isString && Object.keys(textOrOject).length === 0)) {
         return;
     }
@@ -105,6 +110,7 @@ speechService.speak = function (textOrOject, options = {}) {
         msg.pitch = isSelectedVoice && !options.useStandardRatePitch ? _voicePitch : 1;
         msg.rate = options.rate || (isSelectedVoice && !options.useStandardRatePitch ? _voiceRate : 1);
         msg.volume = userSettings.systemVolume / 100.0;
+        msg.lang = nativeVoices[0].langFull || nativeVoices[0].lang;
         log.debug("speak volume", userSettings.systemVolume);
         if (options.progressFn) {
             msg.addEventListener('boundary', options.progressFn);
@@ -175,35 +181,48 @@ speechService.resetSpeakAfterFinished = function () {
  * @param index
  * @return {Promise<void>}
  */
-speechService.speakArray = async function (array, progressFn, index) {
+speechService.speakArray = async function (array, progressFn) {
     let speaking = await speechService.isSpeaking();
+    let userSettings = localStorageService.getUserSettings();
+    if (userSettings.voiceConfig.waitForSpeechToFinish && (speaking || _speakArrayRunId)) {
+        return;
+    }
     if (speaking) {
         speechService.stopSpeaking();
     }
-    index = index || 0;
+    let localRunId = _speakArrayRunId = Date.now();
     progressFn = progressFn || (() => {});
-    array = JSON.parse(JSON.stringify(array));
-    if (!array || array.length === 0) {
+    array = array || [];
+
+    for (let [index, object] of array.entries()) {
+        if (localRunId !== _speakArrayRunId) {
+            if (_speakArrayRunId === null) {
+                // If it is explicitly null, speak() aborted - should clear the marked element.
+                // If it's not null, a new speakArray() took over, so leave the UI alone.
+                progressFn(null, true);
+            }
+            return;
+        }
+        progressFn(index);
+        if (object.text) {
+            speechService.speak(object.text, {dontStop: true});
+            await speechService.waitForFinishedSpeaking();
+        } else if (object.base64Sound) {
+            await audioUtil.playAudio(object.base64Sound);
+            await audioUtil.waitForAudioEnded();
+        }
+    }
+    if (localRunId === _speakArrayRunId || _speakArrayRunId === null) {
         progressFn(null, true);
-        return;
+        _speakArrayRunId = null;
     }
-    progressFn(index);
-    currentSpeakArray = JSON.parse(JSON.stringify(array));
-    let object = currentSpeakArray.shift();
-    if (object.text) {
-        speechService.speak(object.text, { dontStop: true });
-        await speechService.waitForFinishedSpeaking();
-    } else if (object.base64Sound) {
-        await audioUtil.playAudio(object.base64Sound);
-        await audioUtil.waitForAudioEnded();
-    }
-    speechService.speakArray(currentSpeakArray, progressFn, index + 1);
 };
 
 speechService.stopSpeaking = function () {
     currentSpeakArray = [];
     isSpeakingNative = false;
     startedSpeakingRV = false;
+    _speakArrayRunId = null;
     if (speechService.nativeSpeechSupported()) {
         window.speechSynthesis.cancel();
     }
