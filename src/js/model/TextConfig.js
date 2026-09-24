@@ -44,14 +44,15 @@ TextConfig.FONT_ROBOTO_REGULAR = "Roboto-Regular";
 TextConfig.FONT_TIMES = "Times";
 
 TextConfig.FONTS = [TextConfig.FONT_ARIAL, TextConfig.FONT_JOST_400_BOOK, TextConfig.FONT_OPEN_DYSLEXIC_REGULAR, TextConfig.FONT_PRIMA_BOLD, TextConfig.FONT_PRIMA_BOLD_CURSIVE, TextConfig.FONT_ROBOTO_REGULAR, TextConfig.FONT_TIMES];
-TextConfig.FONT_TO_FILENAME = {};
-TextConfig.FONT_TO_FILENAME[TextConfig.FONT_ARIAL] = "Arimo-Regular";
-TextConfig.FONT_TO_FILENAME[TextConfig.FONT_JOST_400_BOOK] = "Jost-400-Book";
-TextConfig.FONT_TO_FILENAME[TextConfig.FONT_OPEN_DYSLEXIC_REGULAR] = "OpenDyslexic-Regular";
-TextConfig.FONT_TO_FILENAME[TextConfig.FONT_PRIMA_BOLD] = "Primae-Bold";
-TextConfig.FONT_TO_FILENAME[TextConfig.FONT_PRIMA_BOLD_CURSIVE] = "Primae-BoldCursive";
-TextConfig.FONT_TO_FILENAME[TextConfig.FONT_ROBOTO_REGULAR] = "Roboto-Regular";
-TextConfig.FONT_TO_FILENAME[TextConfig.FONT_TIMES] = "Tinos-Regular";
+
+TextConfig.FONT_TO_BOLD_FILENAME = {};
+TextConfig.FONT_TO_BOLD_FILENAME[TextConfig.FONT_ARIAL] = "Arimo-Bold";
+TextConfig.FONT_TO_BOLD_FILENAME[TextConfig.FONT_JOST_400_BOOK] = "Jost-500-Medium";
+TextConfig.FONT_TO_BOLD_FILENAME[TextConfig.FONT_OPEN_DYSLEXIC_REGULAR] = "OpenDyslexic-Bold";
+TextConfig.FONT_TO_BOLD_FILENAME[TextConfig.FONT_PRIMA_BOLD] = "Primae-Bold";
+TextConfig.FONT_TO_BOLD_FILENAME[TextConfig.FONT_PRIMA_BOLD_CURSIVE] = "Primae-BoldCursive";
+TextConfig.FONT_TO_BOLD_FILENAME[TextConfig.FONT_ROBOTO_REGULAR] = "Roboto-Bold";
+TextConfig.FONT_TO_BOLD_FILENAME[TextConfig.FONT_TIMES] = "Tinos-Bold";
 
 TextConfig.defaults({
     modelName: TextConfig.getModelName(),

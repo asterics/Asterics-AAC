@@ -83,7 +83,7 @@ printService.gridsToPdf = async function (gridsData, options) {
 
     // load correct font
     let fontFamily = metadata.textConfig.fontFamily || TextConfig.FONT_ARIAL;
-    let fontFilename = TextConfig.FONT_TO_FILENAME[fontFamily];
+    let fontFilename = TextConfig.FONT_TO_BOLD_FILENAME[fontFamily];
     options.fontPath = `./app/fonts/ttf/${fontFilename}.ttf`;
     await loadFont(options.fontPath, doc);
 
@@ -391,8 +391,8 @@ async function loadFont(path, doc) {
     let contentString = util.arrayBufferToBase64(contentBuffer);
     if (contentString) {
         doc.addFileToVFS(fontName, contentString);
-        doc.addFont(fontName, fontName, 'normal');
-        doc.setFont(fontName);
+        doc.addFont(fontName, fontName, 'bold');
+        doc.setFont(fontName, 'bold');
     }
 }
 
