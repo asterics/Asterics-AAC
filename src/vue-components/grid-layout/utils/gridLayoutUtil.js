@@ -8,7 +8,7 @@ gridLayoutUtil.DIR_RIGHT = 2;
 gridLayoutUtil.DIR_DOWN = 3;
 gridLayoutUtil.DIR_LEFT = 4;
 gridLayoutUtil.DIRECTIONS_ALL = [gridLayoutUtil.DIR_UP, gridLayoutUtil.DIR_RIGHT, gridLayoutUtil.DIR_DOWN, gridLayoutUtil.DIR_LEFT];
-gridLayoutUtil.MAX_GRID_SIZE = 100;
+gridLayoutUtil.MAX_GRID_SIZE = 128;
 
 gridLayoutUtil.getWidth = function(gridElements,  gridWidth = 0) {
     if (gridElements.length === 0) {
