@@ -664,6 +664,31 @@
 
     export default vueConfig;
 </script>
-
 <style scoped>
+    .floating-controls {
+        position: fixed;
+        top: 0.2em;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: inline-flex;
+        gap: 0.15em;
+        opacity: 0.78;
+    }
+    
+    .floating-controls:hover,
+    .floating-controls:focus-within {
+        opacity: 1;
+    }
+    
+    .floating-control-button {
+        height: 1.4em;
+        min-width: 2.4em;
+        padding: 0 0.65em;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25em;
+        line-height: 1;
+    }
 </style>
