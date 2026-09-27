@@ -1,6 +1,6 @@
 <template>
     <div class="box" id="gridView" v-cloak>
-        <header class="srow header" role="toolbar" v-if="metadata" v-show="!metadata.fullscreen && !metadata.locked">
+        <header class="srow header" role="toolbar" v-if="metadata" v-show="!metadata.fullscreen && !(metadata.locked && hideToolbarWhenLocked)">
             <header-icon class="left" v-show="!metadata.locked"></header-icon>
             <div class="btn-group left">
                 <button tabindex="30" v-show="!metadata.locked" @click="toEditGrid()" class="spaced small" :aria-label="$t('editingOn')"><i class="fas fa-pencil-alt"/> <span class="hide-mobile">{{ $t('editingOn') }}</span></button>
@@ -17,10 +17,14 @@
                 <i class="fas fa-lock"></i>
                 <span class="hide-mobile">{{ $t('lock') }}</span>
             </button>
+            <label v-show="!metadata.locked">
+                <input type="checkbox" v-model="hideToolbarWhenLocked">
+                Ocultar barra
+            </label>
             <button tabindex="32" @click="systemActionService.enterFullscreen()" class="spaced small" :aria-label="$t('fullscreen')"><i class="fas fa-expand"/> <span class="hide-mobile">{{ $t('fullscreen') }}</span></button>
 
         </header>
-        <div v-if="metadata && (metadata.locked || metadata.fullscreen)" class="floating-controls">
+        <div v-if="metadata && ((metadata.locked && hideToolbarWhenLocked) || metadata.fullscreen)" class="floating-controls">
             <button v-if="metadata.locked && !metadata.fullscreen"
                     tabindex="30"
                     @click="unlock()"
@@ -142,6 +146,7 @@
                 modalTypes: modalTypes,
                 unlockCount: UNLOCK_COUNT,
                 unlockCounter: UNLOCK_COUNT,
+                hideToolbarWhenLocked: false,
                 MainVue: MainVue,
                 highlightTimeoutHandler: null,
                 highlightedElementId: null,
