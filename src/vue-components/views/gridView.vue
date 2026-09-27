@@ -21,12 +21,14 @@
             <button
                 tabindex="34"
                 v-show="!metadata.locked"
-                @click="lock(true)"
+                @click="hideToolbarWhenLocked = !hideToolbarWhenLocked"
                 class="small"
-                aria-label="Bloquear y ocultar"
-                title="Bloquear y ocultar">
+                :class="{ 'btn-primary': hideToolbarWhenLocked }"
+                :aria-pressed="hideToolbarWhenLocked"
+                :aria-label="hideToolbarWhenLocked ? 'No ocultar barra al bloquear' : 'Ocultar barra al bloquear'"
+                :title="hideToolbarWhenLocked ? 'No ocultar barra al bloquear' : 'Ocultar barra al bloquear'">
             
-                <i class="fas fa-eye-slash"></i>
+                <i :class="hideToolbarWhenLocked ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
             </button>
             
             <button tabindex="32" @click="systemActionService.enterFullscreen()" class="spaced small" :aria-label="$t('fullscreen')"><i class="fas fa-expand"/> <span class="hide-mobile">{{ $t('fullscreen') }}</span></button>
