@@ -17,10 +17,18 @@
                 <i class="fas fa-lock"></i>
                 <span class="hide-mobile">{{ $t('lock') }}</span>
             </button>
-            <label v-show="!metadata.locked">
-                <input type="checkbox" v-model="hideToolbarWhenLocked">
-                Ocultar barra
-            </label>
+            <button
+                tabindex="34"
+                v-show="!metadata.locked"
+                @click="hideToolbarWhenLocked = !hideToolbarWhenLocked"
+                class="small"
+                :aria-pressed="hideToolbarWhenLocked"
+                title="Ocultar barra al bloquear">
+                
+                <i class="fas fa-eye-slash"></i>
+                <span>Ocultar barra</span>
+                <i v-if="hideToolbarWhenLocked" class="fas fa-check"></i>
+            </button>
             <button tabindex="32" @click="systemActionService.enterFullscreen()" class="spaced small" :aria-label="$t('fullscreen')"><i class="fas fa-expand"/> <span class="hide-mobile">{{ $t('fullscreen') }}</span></button>
 
         </header>
