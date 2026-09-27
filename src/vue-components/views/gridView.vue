@@ -17,17 +17,18 @@
                 <i class="fas fa-lock"></i>
                 <span class="hide-mobile">{{ $t('lock') }}</span>
             </button>
+            
             <button
                 tabindex="34"
                 v-show="!metadata.locked"
-                @click="hideToolbarWhenLocked = !hideToolbarWhenLocked"
+                @click="lock(true)"
                 class="small"
-                :aria-label="hideToolbarWhenLocked ? 'No ocultar barra al bloquear' : 'Ocultar barra al bloquear'"
-                :title="hideToolbarWhenLocked ? 'No ocultar barra al bloquear' : 'Ocultar barra al bloquear'">
+                aria-label="Bloquear y ocultar"
+                title="Bloquear y ocultar">
             
-                <i :class="hideToolbarWhenLocked ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                <span class="hide-mobile">Ocultar barra</span>
+                <i class="fas fa-eye-slash"></i>
             </button>
+            
             <button tabindex="32" @click="systemActionService.enterFullscreen()" class="spaced small" :aria-label="$t('fullscreen')"><i class="fas fa-expand"/> <span class="hide-mobile">{{ $t('fullscreen') }}</span></button>
 
         </header>
