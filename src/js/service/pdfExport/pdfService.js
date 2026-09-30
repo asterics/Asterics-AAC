@@ -21,9 +21,7 @@ const DEBUG_MARK_AREAS = false;
 let pdfOptions = {
     docPadding: 5,
     footerHeight: 8,
-    textPadding: 1,
-    elementMargin: 1,
-    imgMargin: 1,
+    elementPadding: 1,
     imgHeightPercentage: 0.8
 };
 let jsPdfModule = null;
@@ -222,10 +220,10 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
             continue;
         }
         let elemArea = getArea({
-            x: gridArea.x + elementTotalWidth * element.x + pdfOptions.elementMargin,
-            y: gridArea.y + elementTotalHeight * element.y + pdfOptions.elementMargin,
-            width: elementTotalWidth * element.width - 2 * pdfOptions.elementMargin,
-            height: elementTotalHeight * element.height - 2 * pdfOptions.elementMargin
+            x: gridArea.x + elementTotalWidth * element.x + pdfOptions.elementPadding,
+            y: gridArea.y + elementTotalHeight * element.y + pdfOptions.elementPadding,
+            width: elementTotalWidth * element.width - 2 * pdfOptions.elementPadding,
+            height: elementTotalHeight * element.height - 2 * pdfOptions.elementPadding
         });
         markArea(elemArea, "lightblue");
 
@@ -243,10 +241,10 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
         let labelMaxHeight = elemArea.height - imgMaxHeight;
         if (!displayLabel || !hasImage) {
             let contentArea = getArea({
-                x: elemArea.x + pdfOptions.imgMargin,
-                y: elemArea.y + pdfOptions.imgMargin,
-                width: elemArea.width - 2 * pdfOptions.imgMargin,
-                height: elemArea.height - 2 * pdfOptions.imgMargin
+                x: elemArea.x + pdfOptions.elementPadding,
+                y: elemArea.y + pdfOptions.elementPadding,
+                width: elemArea.width - 2 * pdfOptions.elementPadding,
+                height: elemArea.height - 2 * pdfOptions.elementPadding
             });
             if (hasImage) {
                 imgArea = contentArea;
@@ -256,29 +254,29 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
             }
         } else if (metadata.textConfig.textPosition === TextConfig.TEXT_POS_ABOVE) {
             labelArea = getArea({
-                x: elemArea.x + pdfOptions.textPadding,
-                y: elemArea.y,
-                width: elemArea.width - 2 * pdfOptions.textPadding,
-                height: labelMaxHeight
+                x: elemArea.x + pdfOptions.elementPadding,
+                y: elemArea.y + pdfOptions.elementPadding,
+                width: elemArea.width - 2 * pdfOptions.elementPadding,
+                height: labelMaxHeight - pdfOptions.elementPadding
             });
             imgArea = getArea({
-                x: elemArea.x + pdfOptions.imgMargin,
-                y: elemArea.y + labelMaxHeight + pdfOptions.imgMargin,
-                width: elemArea.width - 2 * pdfOptions.imgMargin,
-                height: imgMaxHeight - 2 * pdfOptions.imgMargin
+                x: elemArea.x + pdfOptions.elementPadding,
+                y: elemArea.y + labelMaxHeight + pdfOptions.elementPadding,
+                width: elemArea.width - 2 * pdfOptions.elementPadding,
+                height: imgMaxHeight - 2 * pdfOptions.elementPadding
             });
         } else { // TEXT_POS_BELOW
             imgArea = getArea({
-                x: elemArea.x + pdfOptions.imgMargin,
-                y: elemArea.y + pdfOptions.imgMargin,
-                width: elemArea.width - 2 * pdfOptions.imgMargin,
-                height: imgMaxHeight - 2 * pdfOptions.imgMargin
+                x: elemArea.x + pdfOptions.elementPadding,
+                y: elemArea.y + pdfOptions.elementPadding,
+                width: elemArea.width - 2 * pdfOptions.elementPadding,
+                height: imgMaxHeight - 2 * pdfOptions.elementPadding
             });
             labelArea = getArea({
-                x: elemArea.x + pdfOptions.textPadding,
+                x: elemArea.x + pdfOptions.elementPadding,
                 y: elemArea.y + imgMaxHeight,
-                width: elemArea.width - 2 * pdfOptions.textPadding,
-                height: labelMaxHeight
+                width: elemArea.width - 2 * pdfOptions.elementPadding,
+                height: labelMaxHeight - pdfOptions.elementPadding
             });
 
         }
