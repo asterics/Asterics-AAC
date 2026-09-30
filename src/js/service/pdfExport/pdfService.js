@@ -16,7 +16,9 @@ import {PdfArea} from "./PdfArea";
 
 let pdfService = {};
 
-const DEBUG_MARK_AREAS = false;
+const DEBUG_MARK_AREAS = true;
+const DOC_WIDTH = 297;
+const DOC_HEIGHT = 210;
 
 let pdfOptions = {
     docPadding: 5,
@@ -111,106 +113,127 @@ pdfService.gridsToPdf = async function (gridsData, options) {
     }
 };
 
-async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
-    let promises = [];
-    let DOC_WIDTH = 297;
-    let DOC_HEIGHT = 210;
-
-    gridData = new GridData(gridData);
-    gridData = gridUtil.mergeGrids(gridData, globalGrid, metadata);
-    let hasARASAACImages = gridData.gridElements.reduce(
+function hasARASAACImages(gridData) {
+    return gridData.gridElements.reduce(
         (total, element) =>
             total || (element.image && element.image.searchProviderName === arasaacService.SEARCH_PROVIDER_NAME),
         false
     );
-    let registerHeight = options.showRegister && options.pages > 1 ? 10 : 0;
-    let footerHeight = hasARASAACImages ? 2 * pdfOptions.footerHeight : pdfOptions.footerHeight;
-    if (footerHeight > 0) {
-        let yBaseFooter = DOC_HEIGHT - pdfOptions.docPadding - registerHeight;
-        let fontSizePt = (pdfOptions.footerHeight * 0.4) / 0.352778;
-        doc.setTextColor(0);
-        doc.setFontSize(fontSizePt);
-        let textL = i18nService.t('printedByAstericsGrid');
-        let textL2 = i18nService.t('copyrightARASAACPDF');
-        let textC = i18nService.getTranslation(gridData.label);
-        let firstParentPage = options.idParentsMap[gridData.id][0];
-        let yLine1 = hasARASAACImages ? yBaseFooter - pdfOptions.footerHeight : yBaseFooter;
-        if (options.showLinks && firstParentPage) {
-            let prefix = JSON.stringify(options.idParentsMap[gridData.id].slice(0, 5));
-            textC = prefix + ' => ' + textC;
-            let textWidth = doc.getTextWidth(textC);
-            doc.link(
-                DOC_WIDTH / 2 - textWidth / 2,
-                yLine1 - pdfOptions.footerHeight * 0.4,
-                textWidth,
-                pdfOptions.footerHeight * 0.4,
-                {pageNumber: firstParentPage}
-            );
-        }
-        let currentPage = options.idPageMap[gridData.id] || 1;
-        let totalPages = Object.keys(options.idPageMap).length || 1;
-        let textR = currentPage + ' / ' + totalPages;
-        doc.text(textL, pdfOptions.docPadding + pdfOptions.elementMargin, yLine1, {
+}
+
+function addFooter({doc, area, gridData, options}) {
+    let fontSizePt = (pdfOptions.footerHeight * 0.4) / 0.352778;
+    doc.setTextColor(0);
+    doc.setFontSize(fontSizePt);
+    let textL = i18nService.t('printedByAstericsGrid');
+    let textL2 = i18nService.t('copyrightARASAACPDF');
+    let textC = i18nService.getTranslation(gridData.label);
+    let firstParentPage = options.idParentsMap[gridData.id][0];
+    let yBaseFooter = area.y + area.height;
+    let hasARASAAC = hasARASAACImages(gridData);
+    let yLine1 = hasARASAAC ? yBaseFooter - pdfOptions.footerHeight : yBaseFooter;
+    if (options.showLinks && firstParentPage) {
+        let prefix = JSON.stringify(options.idParentsMap[gridData.id].slice(0, 5));
+        textC = prefix + ' => ' + textC;
+        let textWidth = doc.getTextWidth(textC);
+        doc.link(
+            DOC_WIDTH / 2 - textWidth / 2,
+            yLine1 - pdfOptions.footerHeight * 0.4,
+            textWidth,
+            pdfOptions.footerHeight * 0.4,
+            {pageNumber: firstParentPage}
+        );
+    }
+    let currentPage = options.idPageMap[gridData.id] || 1;
+    let totalPages = Object.keys(options.idPageMap).length || 1;
+    let textR = currentPage + ' / ' + totalPages;
+    doc.text(textL, pdfOptions.docPadding + pdfOptions.elementPadding, yLine1, {
+        baseline: 'bottom',
+        align: 'left'
+    });
+    if (hasARASAAC) {
+        doc.text(textL2, pdfOptions.docPadding + pdfOptions.elementPadding, yBaseFooter, {
             baseline: 'bottom',
             align: 'left'
         });
-        if (hasARASAACImages) {
-            doc.text(textL2, pdfOptions.docPadding + pdfOptions.elementMargin, yBaseFooter, {
-                baseline: 'bottom',
-                align: 'left'
-            });
-        }
-        doc.text(textC, DOC_WIDTH / 2, yLine1, {
-            baseline: 'bottom',
-            align: 'center'
-        });
-        doc.text(textR, DOC_WIDTH - pdfOptions.docPadding - pdfOptions.elementMargin, yLine1, {
-            baseline: 'bottom',
-            align: 'right'
-        });
     }
-    if (registerHeight > 0) {
-        let maxRegisters = 30;
-        let stepSize = 1;
-        let registerCount = options.pages;
-        if (options.pages > maxRegisters) {
-            stepSize = Math.ceil(options.pages / maxRegisters);
-            registerCount = Math.ceil(options.pages / stepSize);
-        }
-        doc.setFillColor(255, 255, 255);
-        doc.setDrawColor(0);
-        doc.roundedRect(0, DOC_HEIGHT - registerHeight, DOC_WIDTH, registerHeight, 0, 0);
-        doc.setFontSize(13);
-        let registerElementWidth = DOC_WIDTH / registerCount;
-        for (let i = 0; i < registerCount; i++) {
-            doc.roundedRect(
-                i * registerElementWidth,
-                DOC_HEIGHT - registerHeight,
-                registerElementWidth,
-                registerHeight,
-                0,
-                0
+    doc.text(textC, DOC_WIDTH / 2, yLine1, {
+        baseline: 'bottom',
+        align: 'center'
+    });
+    doc.text(textR, DOC_WIDTH - pdfOptions.docPadding - pdfOptions.elementPadding, yLine1, {
+        baseline: 'bottom',
+        align: 'right'
+    });
+}
+
+function addRegister({doc, area, options}) {
+    let maxRegisters = 30;
+    let stepSize = 1;
+    let registerCount = options.pages;
+    if (options.pages > maxRegisters) {
+        stepSize = Math.ceil(options.pages / maxRegisters);
+        registerCount = Math.ceil(options.pages / stepSize);
+    }
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(0);
+    doc.roundedRect(area.x, area.y, area.width, area.height, 0, 0);
+    doc.setFontSize(13);
+    let registerElementWidth = area.width / registerCount;
+    for (let i = 0; i < registerCount; i++) {
+        doc.roundedRect(
+            i * registerElementWidth,
+            DOC_HEIGHT - area.height,
+            registerElementWidth,
+            area.height,
+            0,
+            0
+        );
+        let maxPage = i * stepSize + 1;
+        if (maxPage <= options.page) {
+            doc.text(
+                maxPage + '',
+                i * registerElementWidth + registerElementWidth / 2,
+                area.y + area.height / 2,
+                {
+                    baseline: 'middle',
+                    align: 'center'
+                }
             );
-            let maxPage = i * stepSize + 1;
-            if (maxPage <= options.page) {
-                doc.text(
-                    maxPage + '',
-                    i * registerElementWidth + registerElementWidth / 2,
-                    DOC_HEIGHT - registerHeight / 2,
-                    {
-                        baseline: 'middle',
-                        align: 'center'
-                    }
-                );
-            }
         }
     }
+}
+
+async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
+    let promises = [];
+
+    gridData = new GridData(gridData);
+    gridData = gridUtil.mergeGrids(gridData, globalGrid, metadata);
+    let registerHeight = options.showRegister && options.pages > 1 ? 10 : 0;
+    let footerHeight = hasARASAACImages(gridData) ? 2 * pdfOptions.footerHeight : pdfOptions.footerHeight;
     let gridArea = getArea({
         x: pdfOptions.docPadding,
         y: pdfOptions.docPadding,
         width: DOC_WIDTH - 2 * pdfOptions.docPadding,
-        height:(DOC_HEIGHT - 2 * pdfOptions.docPadding - footerHeight - registerHeight)
+        height: (DOC_HEIGHT - 2 * pdfOptions.docPadding - footerHeight - registerHeight)
     });
+    let footerArea = getArea({
+        x: gridArea.x,
+        y: gridArea.y + gridArea.height,
+        width: gridArea.width,
+        height: footerHeight
+    });
+    let registerArea = getArea({
+        x: 0,
+        y: DOC_HEIGHT - registerHeight,
+        width: DOC_WIDTH,
+        height: registerHeight
+    });
+    addFooter({doc, area: footerArea, gridData, options});
+    if (registerHeight > 0) {
+        addRegister({doc, area: registerArea, options})
+    }
+
     let elementTotalWidth = gridArea.width / gridUtil.getWidthWithBounds(gridData);
     let elementTotalHeight =
         gridArea.height / gridUtil.getHeightWithBounds(gridData);
