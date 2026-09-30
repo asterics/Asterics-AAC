@@ -322,7 +322,7 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
 function addLabelToPdf({doc, element, area, bgColor, label}) {
     let hasImg = element.image && (element.image.data || element.image.url);
     let fontSizeMM = area.height;
-    let fontSizePt = (fontSizeMM / 0.352778) * 0.8;
+    let fontSizePt = (fontSizeMM / 0.352778);
     if (convertMode === TextConfig.CONVERT_MODE_UPPERCASE) {
         label = label.toLocaleUpperCase();
     } else if (convertMode === TextConfig.CONVERT_MODE_LOWERCASE) {
@@ -354,6 +354,10 @@ function getOptimalFontsize(doc, text, baseSize, maxWidth, maxHeight, multipleLi
     let steps = 10;
     let size = baseSize;
     let stepSize = baseSize / 2;
+    let dim = doc.getTextDimensions(text);
+    if (dim.w <= maxWidth) {
+        return size;
+    }
     for (let i = 0; i < steps; i++) {
         doc.setFontSize(size);
         let dim = doc.getTextDimensions(text);
