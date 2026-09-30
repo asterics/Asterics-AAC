@@ -19,6 +19,7 @@ let pdfService = {};
 const DEBUG_MARK_AREAS = true;
 const DOC_WIDTH = 297;
 const DOC_HEIGHT = 210;
+const DEFAULT_FONT_PATH = "./app/fonts/ttf/Arimo-Regular.ttf"
 
 let pdfOptions = {
     docPadding: 5,
@@ -55,7 +56,6 @@ pdfService.gridsToPdf = async function (gridsData, options) {
     }
     options.idPageMap = {};
     options.idParentsMap = {};
-    options.fontPath = '';
     gridsData = gridsData.filter(grid => !!grid);
     gridsData.forEach((grid, index) => {
         options.idPageMap[grid.id] = index + 1;
@@ -77,11 +77,6 @@ pdfService.gridsToPdf = async function (gridsData, options) {
         compress: true
     });
 
-    // load correct font
-    let fontFamily = metadata.textConfig.fontFamily || TextConfig.FONT_ARIAL;
-    let fontFilename = TextConfig.FONT_TO_BOLD_FILENAME[fontFamily];
-    options.fontPath = `./app/fonts/ttf/${fontFilename}.ttf`;
-    await loadFont(options.fontPath, doc);
     options.pages = gridsData.length;
     for (let i = 0; i < gridsData.length && !options.abort; i++) {
         if (options.progressFn) {
@@ -229,11 +224,14 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
         width: DOC_WIDTH,
         height: registerHeight
     });
+
+    await loadDefaultFont();
     addFooter({doc, area: footerArea, gridData, options});
     if (registerHeight > 0) {
         addRegister({doc, area: registerArea, options})
     }
 
+    await loadGridFont();
     let elementTotalWidth = gridArea.width / gridUtil.getWidthWithBounds(gridData);
     let elementTotalHeight =
         gridArea.height / gridUtil.getHeightWithBounds(gridData);
@@ -456,24 +454,51 @@ async function addImageToPdf({doc, element, area}) {
 
 /**
  * load a font from remote and add it to jsPDF doc
+ *
  * @param path the path of the font, e.g. '/app/fonts/My-Font.ttf'
  * @param doc the jsPDF doc instance to install the font to
+ * @param fontWeight the weight of the loaded font ("bold" or "normal")
  * @return {Promise<void>}
  */
-async function loadFont(path, doc) {
+async function loadFont(path, doc, fontWeight) {
+    let fontName = path.substring(path.lastIndexOf('/') + 1);
+
+    // 1. Check if the font and weight are already loaded
+    const fontList = doc.getFontList();
+    if (fontList[fontName] && fontList[fontName].includes(fontWeight)) {
+        doc.setFont(fontName, fontWeight);
+        return;
+    }
+
+    // 2. Fetch only if it hasn't been loaded
     let response = await fetch(path).catch((e) => console.error(e));
     if (!response) {
         return;
     }
-    let fontName = path.substring(path.lastIndexOf('/') + 1);
+
     log.info('using font', fontName);
     let contentBuffer = await response.arrayBuffer();
     let contentString = util.arrayBufferToBase64(contentBuffer);
+
     if (contentString) {
-        doc.addFileToVFS(fontName, contentString);
-        doc.addFont(fontName, fontName, 'bold');
-        doc.setFont(fontName, 'bold');
+        // 3. Add to VFS only if it's not already there
+        if (!doc.existsFileInVFS(fontName)) {
+            doc.addFileToVFS(fontName, contentString);
+        }
+        doc.addFont(fontName, fontName, fontWeight);
+        doc.setFont(fontName, fontWeight);
     }
+}
+
+async function loadDefaultFont() {
+    await loadFont(DEFAULT_FONT_PATH, doc, "normal");
+}
+
+async function loadGridFont() {
+    let fontFamily = metadata.textConfig.fontFamily || TextConfig.FONT_ARIAL;
+    let fontFilename = TextConfig.FONT_TO_BOLD_FILENAME[fontFamily];
+    let fontPath = `./app/fonts/ttf/${fontFilename}.ttf`;
+    await loadFont(fontPath, doc, "bold");
 }
 
 function getArea({ x = 0, y = 0, width = 0, height = 0 } = {}) {
