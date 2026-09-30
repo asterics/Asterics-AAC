@@ -77,6 +77,7 @@
     import {MainVue} from "../../js/vue/mainVue.js";
     import {stateService} from "../../js/service/stateService.js";
     import { UndoService } from '../../js/service/data/undoService';
+    import { localStorageService } from '../../js/service/data/localStorageService';
     import { gridLayoutUtil } from '../grid-layout/utils/gridLayoutUtil';
     import { collectElementService } from '../../js/service/collectElementService';
     import AppGridDisplay from '../grid-display/appGridDisplay.vue';
@@ -346,6 +347,37 @@
                         newElement.actions = [playAction, predictAction];
                     } else if (type === GridElement.ELEMENT_TYPE_LIVE) {
                         newElement = new GridElementLive(baseProperties);
+                        showEdit = true;
+                    } else if (type === GridElement.ELEMENT_TYPE_COMIC_BUBBLE) {
+                        let currentLang = i18nService.getContentLang() || 'es';
+                        let savedColors = localStorageService.getJSON('AG_COMIC_BUBBLE_SAVED_COLORS') || {};
+                        newElement.type = GridElement.ELEMENT_TYPE_COMIC_BUBBLE;
+                        newElement.dontCollect = true;
+                        newElement.addToCollect = false;
+                        newElement.label = {};
+                        newElement.label[currentLang] = i18nService.t('comicBubbleDefaultText');
+                        newElement.actions = [new GridActionSpeak()];
+                        if (savedColors.fontColor) {
+                            newElement.fontColor = savedColors.fontColor;
+                        }
+                        if (savedColors.cellBgColor && savedColors.cellBgColor !== 'transparent') {
+                            newElement.backgroundColor = savedColors.cellBgColor;
+                        }
+                        newElement.additionalProps = newElement.additionalProps || {};
+                        newElement.additionalProps.comicBubble = {
+                            bubbleType: 'speech',
+                            tailPosition: 'bottom-left',
+                            fillColor: savedColors.fillColor || '#ffffff',
+                            borderColor: savedColors.borderColor || '#111111',
+                            borderWidth: 3,
+                            cellBgColor: savedColors.cellBgColor || 'transparent',
+                            fontFamily: '"Comic Neue", "Comic Sans MS", "Chalkboard SE", cursive, sans-serif',
+                            fontWeight: 'bold',
+                            fontStyle: 'normal',
+                            fontColor: savedColors.fontColor || '#111111',
+                            textAlign: 'center',
+                            comicShadow: true
+                        };
                         showEdit = true;
                     } else if (type === GridElement.ELEMENT_TYPE_MATRIX_CONVERSATION) {
                         newElement = new GridElementMatrixConversation(baseProperties);
@@ -822,6 +854,7 @@
         let contextMenuNewGroup = {
             name: i18nService.t('new'), icon: "fas fa-plus-circle", items: {
                 'CONTEXT_NEW_SINGLE': {name: i18nService.t('newElement'), icon: "fas fa-plus"},
+                'CONTEXT_NEW_COMIC_BUBBLE': {name: i18nService.t('newComicBubble'), icon: "fas fa-comment-dots"},
                 'CONTEXT_NEW_MASS': {name: i18nService.t('manyNewElements'), icon: "fas fa-clone"},
                 'CONTEXT_NEW_CHILD_PLACEHOLDER': {
                     name: i18nService.t('newDynamicGridPlaceholder'),
@@ -854,11 +887,13 @@
 
         var itemsGlobal = {
             'CONTEXT_NEW_SINGLE': {name: i18nService.t('newElement'), icon: "fas fa-plus"},
+            'CONTEXT_NEW_COMIC_BUBBLE': {name: i18nService.t('newComicBubble'), icon: "fas fa-comment-dots"},
             'CONTEXT_NEW_MASS': {name: i18nService.t('manyNewElements'), icon: "fas fa-clone"},
             CONTEXT_ACTION_PASTE: {name: i18nService.t('paste'), icon: "far fa-clipboard"},
             CONTEXT_NEW_GROUP_REDUCED: JSON.parse(JSON.stringify(contextMenuNewGroup))
         };
         itemsGlobal[CONTEXT_NEW_GROUP_REDUCED].items[CONTEXT_NEW_SINGLE].visible = false;
+        itemsGlobal[CONTEXT_NEW_GROUP_REDUCED].items['CONTEXT_NEW_COMIC_BUBBLE'].visible = false;
         itemsGlobal[CONTEXT_NEW_GROUP_REDUCED].items[CONTEXT_NEW_MASS].visible = false;
         itemsGlobal[CONTEXT_NEW_GROUP_REDUCED].items[CONTEXT_NEW_CHILD_PLACEHOLDER].disabled = childPlaceholderDisabledFn;
         itemsGlobal[CONTEXT_NEW_GROUP_REDUCED].name = i18nService.t('newSpecialElement');
@@ -974,6 +1009,10 @@
             switch (key) {
                 case CONTEXT_NEW_SINGLE: {
                     vueApp.newElement(GridElement.ELEMENT_TYPE_NORMAL, createdWithinGrid);
+                    break;
+                }
+                case 'CONTEXT_NEW_COMIC_BUBBLE': {
+                    vueApp.newElement(GridElement.ELEMENT_TYPE_COMIC_BUBBLE, createdWithinGrid);
                     break;
                 }
                 case CONTEXT_NEW_MASS: {
