@@ -362,8 +362,11 @@ function addLabelToPdf({doc, element, area, bgColor, label}) {
         area.height,
         !hasImg || metadata.textConfig.maxLines > 1
     );
-    let textColor = fontUtil.getHighContrastColorRgb(bgColor);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    let textColor = metadata.textConfig.fontColor && metadata.textConfig.fontColor !== constants.COLORS.BLACK ?
+        metadata.textConfig.fontColor :
+        fontUtil.getHighContrastColorRgb(bgColor);
+    let rgbColor = util.getRGB(textColor);
+    doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     doc.setFontSize(optimalFontSize);
     let dim = doc.getTextDimensions(label);
     let lines = Math.ceil(dim.w / area.width);
