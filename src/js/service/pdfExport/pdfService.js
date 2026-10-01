@@ -117,7 +117,7 @@ function hasARASAACImages(gridData) {
 
 function addFooter({doc, area, gridData, options}) {
     let fontSizePt = (pdfOptions.footerHeight * 0.4) / 0.352778;
-    doc.setTextColor(0);
+    setTextColor(0);
     doc.setFontSize(fontSizePt);
     let textL = i18nService.t('printedByAstericsGrid');
     let textL2 = i18nService.t('copyrightARASAACPDF');
@@ -169,8 +169,8 @@ function addRegister({doc, area, options}) {
         stepSize = Math.ceil(options.pages / maxRegisters);
         registerCount = Math.ceil(options.pages / stepSize);
     }
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(0);
+    setFillColor([255, 255, 255]);
+    setDrawColor(0);
     doc.roundedRect(area.x, area.y, area.width, area.height, 0, 0);
     doc.setFontSize(13);
     let registerElementWidth = area.width / registerCount;
@@ -203,8 +203,8 @@ function addLink({element, idPageMap, elemArea}) {
         let targetPage = idPageMap[gridUtil.getNavigateGridId(element, homeGridId)];
         let iconWidth = Math.max(elemArea.width / 10, 7);
         let offsetX = elemArea.width - iconWidth - 1;
-        doc.setDrawColor(255);
-        doc.setFillColor(90, 113, 122);
+        setDrawColor(255);
+        setFillColor([90, 113, 122]);
         let rectX = elemArea.x + offsetX;
         let rectY = elemArea.y + 1;
         if (metadata.textConfig.textPosition === TextConfig.TEXT_POS_ABOVE) {
@@ -214,7 +214,7 @@ function addLink({element, idPageMap, elemArea}) {
         doc.link(elemArea.x, elemArea.y, elemArea.width, elemArea.height, {pageNumber: targetPage});
         if (targetPage) {
             let fontSizePt = (iconWidth * 0.6) / 0.352778;
-            doc.setTextColor(255, 255, 255);
+            setTextColor([255, 255, 255]);
             doc.setFontSize(fontSizePt);
             doc.text(
                 targetPage + '',
@@ -362,11 +362,8 @@ function addLabelToPdf({doc, element, area, bgColor, label}) {
         area.height,
         !hasImg || metadata.textConfig.maxLines > 1
     );
-    let textColor = metadata.textConfig.fontColor && metadata.textConfig.fontColor !== constants.COLORS.BLACK ?
-        metadata.textConfig.fontColor :
-        fontUtil.getHighContrastColorRgb(bgColor);
-    let rgbColor = util.getRGB(textColor);
-    doc.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+    let textColor = colorUtil.getFontColor(metadata, bgColor);
+    setTextColor(textColor);
     doc.setFontSize(optimalFontSize);
     let dim = doc.getTextDimensions(label);
     let lines = Math.ceil(dim.w / area.width);
@@ -517,6 +514,29 @@ function getArea({ x = 0, y = 0, width = 0, height = 0 } = {}) {
 function markArea(area, color, text) {
     if (DEBUG_MARK_AREAS) {
         area.mark(color, text);
+    }
+}
+
+function setDrawColor(color) {
+    setColor(color, "setDrawColor");
+}
+
+function setFillColor(color) {
+    setColor(color, "setFillColor");
+}
+
+function setTextColor(color) {
+    setColor(color, "setTextColor");
+}
+
+function setColor(color, colorFnName) {
+    if (color === "transparent") {
+        color = 255;
+    }
+    if (Array.isArray(color)) {
+        doc[colorFnName](color[0], color[1], color[2]);
+    } else {
+        doc[colorFnName](color);
     }
 }
 
