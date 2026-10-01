@@ -67,7 +67,7 @@
     import './../../css/modal.css';
     import {dataService} from "../../js/service/data/dataService";
     import {gridUtil} from "../../js/util/gridUtil";
-    import {printService} from "../../js/service/printService";
+    import {pdfService} from "../../js/service/pdfExport/pdfService";
     import {MainVue} from "../../js/vue/mainVue";
 
     export default {
@@ -112,7 +112,7 @@
                     let homeGridId = this.metadata.homeGridId;
                     let selectedId = this.selectedGrid ? this.selectedGrid.id : null;
                     grids = gridUtil.sortGrids(grids, homeGridId, selectedId);
-                    printService.gridsToPdf(grids, {
+                    pdfService.gridsToPdf(grids, {
                         printBackground: this.options.printBackground,
                         showLinks: this.options.showLinks,
                         showRegister: this.options.showRegister,
