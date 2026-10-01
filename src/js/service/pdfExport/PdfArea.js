@@ -52,6 +52,15 @@ class PdfArea {
         this.doc.setFillColor(previousFillColor);
         this.doc.setTextColor(previousTextColor);
     }
+
+    fill(color) {
+        if (Array.isArray(color)) {
+            this.doc.setFillColor(color[0], color[1], color[2]);
+        } else {
+            this.doc.setFillColor(color);
+        }
+        this.doc.rect(this.x, this.y, this.width, this.height, 'F');
+    }
 }
 
 export {PdfArea};
