@@ -5,14 +5,13 @@ import {imageUtil} from '../../util/imageUtil';
 import {GridElement} from '../../model/GridElement';
 import {util} from '../../util/util';
 import {dataService} from '../data/dataService.js';
-import {MetaData} from '../../model/MetaData.js';
 import {arasaacService} from '../pictograms/arasaacService.js';
 import $ from "../../externals/jquery.js";
 import {constants} from "../../util/constants.js";
 import {TextConfig} from "../../model/TextConfig.js";
 import {gridUtil} from '../../util/gridUtil';
-import {fontUtil} from '../../util/fontUtil';
 import {PdfArea} from "./PdfArea";
+import {colorUtil} from "../../util/colorUtil";
 
 let pdfService = {};
 
@@ -265,22 +264,37 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
     let elementTotalHeight =
         gridArea.height / gridUtil.getHeightWithBounds(gridData);
     markArea(gridArea, "lightgreen");
+    if (options.printBackground) {
+        gridArea.fill(metadata.colorConfig.gridBackgroundColor);
+    }
     for (let element of gridData.gridElements) {
         if (element.hidden) {
             continue;
         }
         let elemArea = getArea({
+        let borderWidth = pctToMm(metadata.colorConfig.borderWidth);
+        let outerElemArea = getArea({
             x: gridArea.x + elementTotalWidth * element.x + pdfOptions.elementPadding,
             y: gridArea.y + elementTotalHeight * element.y + pdfOptions.elementPadding,
             width: elementTotalWidth * element.width - 2 * pdfOptions.elementPadding,
             height: elementTotalHeight * element.height - 2 * pdfOptions.elementPadding
         });
-        markArea(elemArea, "lightblue");
+        let elemArea = getArea({
+            x: outerElemArea.x + borderWidth / 2,
+            y: outerElemArea.y + borderWidth / 2,
+            width: outerElemArea.width - borderWidth,
+            height: outerElemArea.height - borderWidth
+        });
 
-        let bgColor = options.printBackground ? util.getRGB(MetaData.getElementColor(element, metadata)) : [255, 255, 255];
-        doc.setDrawColor(0);
-        doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
-        doc.roundedRect(elemArea.x, elemArea.y, elemArea.width, elemArea.height, 3, 3, 'FD');
+        doc.saveGraphicsState();
+        let bgColor = options.printBackground ? colorUtil.getBackgroundColor(element, metadata) : constants.COLORS.WHITE;
+        let borderColor = colorUtil.getBorderColor(element, metadata, true);
+        let borderRadius = pctToMm(metadata.colorConfig.borderRadius);
+        setDrawColor(borderColor);
+        setFillColor(bgColor);
+        doc.setLineWidth(borderWidth);
+        doc.roundedRect(outerElemArea.x, outerElemArea.y, outerElemArea.width, outerElemArea.height, borderRadius, borderRadius, 'FD');
+        doc.restoreGraphicsState();
 
         let hasImage = element && element.image && (element.image.data || element.image.url);
         let displayLabel = gridUtil.getDisplayLabel(element);
@@ -331,6 +345,7 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
 
         }
 
+        markArea(elemArea, "lightblue");
         markArea(imgArea, "yellow");
         markArea(labelArea, "orange");
         if (displayLabel) {
@@ -511,8 +526,8 @@ function getArea({ x = 0, y = 0, width = 0, height = 0 } = {}) {
     return new PdfArea({x, y, width, height, doc, jsPdfModule});
 }
 
-function markArea(area, color, text) {
-    if (DEBUG_MARK_AREAS) {
+function markArea(area, color, text, force) {
+    if (DEBUG_MARK_AREAS || force) {
         area.mark(color, text);
     }
 }
@@ -538,6 +553,10 @@ function setColor(color, colorFnName) {
     } else {
         doc[colorFnName](color);
     }
+}
+
+function pctToMm(pct) {
+    return DOC_HEIGHT * pct / 100;
 }
 
 async function getMetadataConfig() {
