@@ -359,7 +359,8 @@ function addLabelToPdf({doc, element, area, bgColor, label}) {
         label,
         fontSizePt,
         area.width,
-        area.height
+        area.height,
+        !hasImg || metadata.textConfig.maxLines > 1
     );
     let textColor = fontUtil.getHighContrastColorRgb(bgColor);
     doc.setTextColor(textColor[0], textColor[1], textColor[2]);
@@ -375,7 +376,7 @@ function addLabelToPdf({doc, element, area, bgColor, label}) {
     });
 }
 
-function getOptimalFontsize(doc, text, baseSize, maxWidth, maxHeight) {
+function getOptimalFontsize(doc, text, baseSize, maxWidth, maxHeight, multipleLines) {
     let steps = 10;
     let size = baseSize;
     let stepSize = baseSize / 2;
@@ -387,7 +388,7 @@ function getOptimalFontsize(doc, text, baseSize, maxWidth, maxHeight) {
     for (let i = 0; i < steps; i++) {
         doc.setFontSize(size);
         let dim = doc.getTextDimensions(text);
-        if (text.indexOf(' ') !== -1) {
+        if (multipleLines && text.indexOf(' ') !== -1) {
             let possibleLines = Math.floor(maxHeight / dim.h);
             let currentLines = Math.ceil(dim.w / maxWidth);
             if (dim.w / possibleLines > maxWidth * 0.5 || currentLines > possibleLines) {
