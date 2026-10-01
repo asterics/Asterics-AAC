@@ -271,13 +271,13 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
         if (element.hidden) {
             continue;
         }
-        let elemArea = getArea({
         let borderWidth = pctToMm(metadata.colorConfig.borderWidth);
+        let elementMargin = borderWidth / 2 + pctToMm((metadata.colorConfig.elementMargin));
         let outerElemArea = getArea({
-            x: gridArea.x + elementTotalWidth * element.x + pdfOptions.elementPadding,
-            y: gridArea.y + elementTotalHeight * element.y + pdfOptions.elementPadding,
-            width: elementTotalWidth * element.width - 2 * pdfOptions.elementPadding,
-            height: elementTotalHeight * element.height - 2 * pdfOptions.elementPadding
+            x: gridArea.x + elementTotalWidth * element.x + elementMargin,
+            y: gridArea.y + elementTotalHeight * element.y + elementMargin,
+            width: elementTotalWidth * element.width - 2 * elementMargin,
+            height: elementTotalHeight * element.height - 2 * elementMargin
         });
         let elemArea = getArea({
             x: outerElemArea.x + borderWidth / 2,
