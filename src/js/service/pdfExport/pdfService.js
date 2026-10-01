@@ -16,7 +16,7 @@ import {PdfArea} from "./PdfArea";
 
 let pdfService = {};
 
-const DEBUG_MARK_AREAS = true;
+const DEBUG_MARK_AREAS = false;
 const DOC_WIDTH = 297;
 const DOC_HEIGHT = 210;
 const DEFAULT_FONT_PATH = "./app/fonts/ttf/Arimo-Regular.ttf"
@@ -24,8 +24,7 @@ const DEFAULT_FONT_PATH = "./app/fonts/ttf/Arimo-Regular.ttf"
 let pdfOptions = {
     docPadding: 5,
     footerHeight: 8,
-    elementPadding: 1,
-    imgHeightPercentage: 0.8
+    elementPadding: 1
 };
 let jsPdfModule = null;
 let doc = null;
@@ -288,7 +287,7 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
         let labelArea = getArea();
         let imgArea = getArea();
 
-        let imgMaxHeight = pdfOptions.imgHeightPercentage * elemArea.height;
+        let imgMaxHeight = (1 - metadata.textConfig.fontSizePct / 100) * elemArea.height;
         let labelMaxHeight = elemArea.height - imgMaxHeight;
         if (!displayLabel || !hasImage) {
             let contentArea = getArea({
@@ -360,8 +359,7 @@ function addLabelToPdf({doc, element, area, bgColor, label}) {
         label,
         fontSizePt,
         area.width,
-        area.height,
-        !hasImg
+        area.height
     );
     let textColor = fontUtil.getHighContrastColorRgb(bgColor);
     doc.setTextColor(textColor[0], textColor[1], textColor[2]);
@@ -377,10 +375,11 @@ function addLabelToPdf({doc, element, area, bgColor, label}) {
     });
 }
 
-function getOptimalFontsize(doc, text, baseSize, maxWidth, maxHeight, multipleLines) {
+function getOptimalFontsize(doc, text, baseSize, maxWidth, maxHeight) {
     let steps = 10;
     let size = baseSize;
     let stepSize = baseSize / 2;
+    doc.setFontSize(size);
     let dim = doc.getTextDimensions(text);
     if (dim.w <= maxWidth) {
         return size;
@@ -388,7 +387,7 @@ function getOptimalFontsize(doc, text, baseSize, maxWidth, maxHeight, multipleLi
     for (let i = 0; i < steps; i++) {
         doc.setFontSize(size);
         let dim = doc.getTextDimensions(text);
-        if (multipleLines && text.indexOf(' ') !== -1) {
+        if (text.indexOf(' ') !== -1) {
             let possibleLines = Math.floor(maxHeight / dim.h);
             let currentLines = Math.ceil(dim.w / maxWidth);
             if (dim.w / possibleLines > maxWidth * 0.5 || currentLines > possibleLines) {
