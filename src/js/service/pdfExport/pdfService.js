@@ -199,9 +199,39 @@ function addRegister({doc, area, options}) {
     }
 }
 
-async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
-    let promises = [];
+function addLink({element, idPageMap, elemArea}) {
+    if (idPageMap[gridUtil.getNavigateGridId(element, homeGridId)]) {
+        let targetPage = idPageMap[gridUtil.getNavigateGridId(element, homeGridId)];
+        let iconWidth = Math.max(elemArea.width / 10, 7);
+        let offsetX = elemArea.width - iconWidth - 1;
+        doc.setDrawColor(255);
+        doc.setFillColor(90, 113, 122);
+        let rectX = elemArea.x + offsetX;
+        let rectY = elemArea.y + 1;
+        if (metadata.textConfig.textPosition === TextConfig.TEXT_POS_ABOVE) {
+            rectY = elemArea.y + elemArea.height - iconWidth - 1;
+        }
+        doc.roundedRect(rectX, rectY, iconWidth, iconWidth, 1, 1, 'FD');
+        doc.link(elemArea.x, elemArea.y, elemArea.width, elemArea.height, {pageNumber: targetPage});
+        if (targetPage) {
+            let fontSizePt = (iconWidth * 0.6) / 0.352778;
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(fontSizePt);
+            doc.text(
+                targetPage + '',
+                rectX + iconWidth / 2,
+                rectY + iconWidth / 2,
+                {
+                    baseline: 'middle',
+                    align: 'center',
+                    maxWidth: iconWidth
+                }
+            );
+        }
+    }
+}
 
+async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
     gridData = new GridData(gridData);
     gridData = gridUtil.mergeGrids(gridData, globalGrid, metadata);
     let registerHeight = options.showRegister && options.pages > 1 ? 10 : 0;
@@ -310,34 +340,10 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
         if (hasImage) {
             await addImageToPdf({doc, element, area: imgArea});
         }
-        element = new GridElement(element);
-        if (options.showLinks && options.idPageMap[gridUtil.getNavigateGridId(element, homeGridId)]) {
-            let targetPage = options.idPageMap[gridUtil.getNavigateGridId(element, homeGridId)];
-            let iconWidth = Math.max(elemArea.width / 10, 7);
-            let offsetX = elemArea.width - iconWidth - 1;
-            let offsetY = 1;
-            doc.setDrawColor(255);
-            doc.setFillColor(90, 113, 122);
-            doc.roundedRect(elemArea.x + offsetX, elemArea.y + offsetY, iconWidth, iconWidth, 1, 1, 'FD');
-            doc.link(elemArea.x, elemArea.y, elemArea.width, elemArea.height, {pageNumber: targetPage});
-            if (targetPage) {
-                let fontSizePt = (iconWidth * 0.6) / 0.352778;
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(fontSizePt);
-                doc.text(
-                    targetPage + '',
-                    elemArea.x + offsetX + iconWidth / 2,
-                    elemArea.y + offsetY + iconWidth / 2,
-                    {
-                        baseline: 'middle',
-                        align: 'center',
-                        maxWidth: iconWidth
-                    }
-                );
-            }
+        if (options.showLinks) {
+            addLink({element, idPageMap: options.idPageMap, elemArea});
         }
     }
-    return Promise.all(promises);
 }
 
 function addLabelToPdf({doc, element, area, bgColor, label}) {
