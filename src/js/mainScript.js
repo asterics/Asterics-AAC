@@ -27,6 +27,7 @@ async function init() {
         'Asterics AAC, release version: https://github.com/asterics/Asterics-AAC/releases/tag/' +
             constants.CURRENT_VERSION
     );
+    log.info("this was built by new workflow");
     consoleReService.init();
     checkAppVersion();
     initServiceWorker();
