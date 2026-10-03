@@ -4,7 +4,7 @@
             <div class="grid-bg-lines" :style="`margin-left: ${getRasterX()}px; margin-right: 1px; background-size: ${getRasterX()}px ${getRasterX()}px; background-image: linear-gradient(to right, grey 1px, transparent 1px)`"/>
             <div class="grid-bg-lines" :style="`margin-top: ${getRasterY()}px; margin-bottom: 1px; background-size: ${getRasterY()}px ${getRasterY()}px; background-image: linear-gradient(to bottom, grey 1px, transparent 1px);`"/>
         </div>
-        <transition-group ref="gridComponent" :name="editable ? 'grid-transition' : ''" :tag="baseTag" class="grid-layout" :style="`grid-template-columns: repeat(${columns}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, minmax(0, 1fr)); background-color: ${backgroundColor}`">
+        <transition-group ref="gridComponent" :name="editable ? 'grid-transition' : ''" :tag="baseTag" class="grid-layout" :style="layoutStyle">
             <grid-element v-for="elem in elements" :key="getKey(elem)" :data-id="elem.id" :x="elem.x" :y="elem.y" :width="elem.width" :height="elem.height" :tag="elementTag" :class="elem.id + '' === noMoveId ? 'nomove' : ''" :element="elem" :elem-css-fn="elemCssFn">
                 <component :id="elem.id" :is="renderComponent" :element="elem" :editable="editable" v-bind="$attrs"/>
             </grid-element>
@@ -31,6 +31,10 @@ export default {
         backgroundColor: {
             type: String,
             default: 'white'
+        },
+        backgroundImage: {
+            type: String,
+            default: null
         },
         baseTag: {
             type: String,
@@ -89,6 +93,13 @@ export default {
         },
         totalElementClassSelector() {
             return `.${this.myId} ${this.elementClassSelector}`;
+        },
+        layoutStyle() {
+            let style = `grid-template-columns: repeat(${this.columns}, minmax(0, 1fr)); grid-template-rows: repeat(${this.rows}, minmax(0, 1fr)); background-color: ${this.backgroundColor};`;
+            if (this.backgroundImage) {
+                style += ` background-image: url('${this.backgroundImage}'); background-size: cover; background-position: center; background-repeat: no-repeat;`;
+            }
+            return style;
         }
     },
     methods: {
