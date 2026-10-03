@@ -82,6 +82,7 @@
     import {MainVue} from "../../js/vue/mainVue.js";
     import {stateService} from "../../js/service/stateService.js";
     import { systemActionService } from '../../js/service/systemActionService';
+    import { kioskService } from '../../js/service/kioskService';
     import AppGridDisplay from '../grid-display/appGridDisplay.vue';
     import { gridUtil } from '../../js/util/gridUtil';
     import { collectElementService } from '../../js/service/collectElementService';
@@ -510,6 +511,28 @@
 
             let savedMetadata = await dataService.getMetadata();
             let metadata = JSON.parse(JSON.stringify(savedMetadata || new MetaData()));
+            let appSettings = localStorageService.getAppSettings() || {};
+            if (appSettings.lockOnStartup) {
+                metadata.locked = true;
+            }
+            if (appSettings.fullscreenOnStartup) {
+                metadata.fullscreen = true;
+                let enterFs = () => {
+                    if (!util.isFullscreen()) {
+                        try {
+                            let p = util.openFullscreen();
+                            if (p && p.catch) p.catch(() => {});
+                        } catch (e) {}
+                    }
+                };
+                window.addEventListener('click', enterFs, { once: true });
+                window.addEventListener('touchstart', enterFs, { once: true });
+                window.addEventListener('pointerdown', enterFs, { once: true });
+                window.addEventListener('keydown', enterFs, { once: true });
+            }
+            if (appSettings.kioskModeOnStartup) {
+                kioskService.lockApp({ fullscreen: appSettings.fullscreenOnStartup });
+            }
             metadata.lastOpenedGridId = this.gridId;
             metadata.locked = metadata.locked === undefined ? urlParamService.isDemoMode() && dataService.getCurrentUser() === constants.LOCAL_DEMO_USERNAME : metadata.locked;
             if (metadata.locked) {
@@ -517,7 +540,9 @@
             }
             metadata.fullscreen = metadata.fullscreen === undefined ? urlParamService.isDemoMode() && dataService.getCurrentUser() === constants.LOCAL_DEMO_USERNAME : metadata.fullscreen;
             metadata.fullscreen = urlParamService.isFullscreen(true) ? true : metadata.fullscreen;
-            metadata.fullscreen = metadata.fullscreen && util.isFullscreen();
+            if (!appSettings.fullscreenOnStartup && !urlParamService.isFullscreen(true)) {
+                metadata.fullscreen = metadata.fullscreen && util.isFullscreen();
+            }
             metadata.locked = urlParamService.isLocked(true) ? true : metadata.locked;
             metadata.inputConfig.scanEnabled = urlParamService.isScanningEnabled() ? true : metadata.inputConfig.scanEnabled;
             metadata.inputConfig.dirEnabled = urlParamService.isDirectionEnabled() ? true : metadata.inputConfig.dirEnabled;

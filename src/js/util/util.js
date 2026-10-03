@@ -336,7 +336,15 @@ util.openFullscreen = function () {
     let openFn =
         elem.requestFullscreen || elem.mozRequestFullScreen || elem.webkitRequestFullscreen || elem.msRequestFullscreen;
     if (openFn) {
-        openFn.call(elem);
+        try {
+            let res = openFn.call(elem);
+            if (res && res.catch) {
+                res.catch(() => {});
+            }
+            return res;
+        } catch (e) {
+            return Promise.resolve();
+        }
     }
 };
 
