@@ -20,6 +20,26 @@
                             <label for="gridCols" class="seven columns">{{ $t('minimumNumberOfColumns') }}</label>
                             <input id="gridCols" type="number" class="three columns" v-model.number="gridData.minColumnCount" min="1" :max="gridLayoutUtil.MAX_GRID_SIZE"/>
                         </div>
+                        <h2>{{ $t('boardBackgroundImage') }}</h2>
+                        <div class="srow">
+                            <label class="four columns">{{ $t('image') }}</label>
+                            <button type="button" class="eight columns" @click="$refs.bgImageFileInput.click()">
+                                <i class="fas fa-file-upload"/> <span>{{ $t('chooseFile') }}</span>
+                            </button>
+                            <input type="file" ref="bgImageFileInput" id="bgImageInput" style="display: none;" @change="onBgImageSelected" accept="image/png, image/jpeg, image/webp, image/svg+xml, image/gif"/>
+                        </div>
+                        <div class="srow">
+                            <button type="button" class="offset-by-four eight columns" :disabled="!gridData.backgroundImage" @click="clearBgImage()">
+                                <i class="fas fa-trash-alt"/> <span>{{ $t('clear') }}</span>
+                            </button>
+                        </div>
+                        <div class="srow" v-if="gridData.backgroundImage">
+                            <div class="offset-by-four eight columns" style="display: flex; align-items: center;">
+                                <div style="border: 1px solid #dcdcdc; border-radius: 2px; padding: 4px; background: #f8f9fa;">
+                                    <img :src="gridData.backgroundImage" style="max-width: 160px; max-height: 90px; display: block; object-fit: contain;" alt="Preview"/>
+                                </div>
+                            </div>
+                        </div>
                         <div v-if="!isGlobalGrid">
                             <h2>{{ $t('globalGrid') }}</h2>
                             <div class="srow">
@@ -72,6 +92,7 @@
     import {dataService} from "../../js/service/data/dataService";
     import { gridLayoutUtil } from '../grid-layout/utils/gridLayoutUtil';
     import { gridUtil } from '../../js/util/gridUtil';
+    import { imageUtil } from '../../js/util/imageUtil';
     import { i18nService } from '../../js/service/i18nService';
     import { GridData } from '../../js/model/GridData';
 
@@ -100,6 +121,28 @@
                     this.$emit('reload');
                     this.$emit('close');
                 });
+            },
+            triggerFileInput() {
+                if (this.$refs.bgImageFileInput) {
+                    this.$refs.bgImageFileInput.click();
+                }
+            },
+            async onBgImageSelected(event) {
+                let file = event.target.files && event.target.files[0];
+                if (!file) {
+                    return;
+                }
+                let base64 = await imageUtil.getBase64FromInput(event.target);
+                if (base64) {
+                    let compressed = await imageUtil.compressToSize(base64, 1920, 1024).catch(() => base64);
+                    this.$set(this.gridData, 'backgroundImage', compressed || base64);
+                }
+            },
+            clearBgImage() {
+                this.$set(this.gridData, 'backgroundImage', null);
+                if (this.$refs.bgImageFileInput) {
+                    this.$refs.bgImageFileInput.value = '';
+                }
             }
         },
         async mounted() {

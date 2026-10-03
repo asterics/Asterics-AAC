@@ -23,7 +23,8 @@ class GridData extends Model({
     showGlobalGrid: [Boolean],
     globalGridId: [String],
     keyboardMode: [String],
-    backgroundColor: [String]
+    backgroundColor: [String],
+    backgroundImage: [String]
 }) {
     constructor(properties, elementToCopy) {
         properties = modelUtil.setDefaults(properties, elementToCopy, GridData);
@@ -221,7 +222,8 @@ GridData.DEFAULTS = {
     lastUpdateTime: new Date().getTime(),
     showGlobalGrid: true,
     globalGridId: null,
-    keyboardMode: null
+    keyboardMode: null,
+    backgroundImage: null
 };
 
 GridData.defaults(GridData.DEFAULTS);
