@@ -88,6 +88,7 @@
     import {imageUtil} from "../../js/util/imageUtil";
     import {GridImage} from "../../js/model/GridImage";
     import {GridActionPredict} from "../../js/model/GridActionPredict";
+    import {GridActionSpeak} from "../../js/model/GridActionSpeak";
 
     let vueApp = null;
 
