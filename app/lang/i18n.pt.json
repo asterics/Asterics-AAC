@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Avançar",
     "SYS_ENTER_FULLSCREEN": "Entrar no modo de ecrã completo",
     "SYS_LEAVE_FULLSCREEN": "Sair do modo de ecrã completo",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Atualizar células em tempo real",
     "SYS_VOLUME_DOWN": "Diminuir volume do sistema",
     "SYS_VOLUME_TOGGLE_MUTE": "Ligar/desligar volume do sistema",

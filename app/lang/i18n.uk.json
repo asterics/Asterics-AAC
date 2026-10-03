@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Крок вперед",
     "SYS_ENTER_FULLSCREEN": "Перейти в повноекранний режим",
     "SYS_LEAVE_FULLSCREEN": "Вийти з повноекранного режиму",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Оновити активні елементи",
     "SYS_VOLUME_DOWN": "Зменшення гучності системи",
     "SYS_VOLUME_TOGGLE_MUTE": "Вимкнути звук системи",

@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Krok vpřed",
     "SYS_ENTER_FULLSCREEN": "Režim na celou obrazovku",
     "SYS_LEAVE_FULLSCREEN": "Ukončit režim celé obrazovky",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Aktualizovat živé prvky",
     "SYS_VOLUME_DOWN": "Snížit hlasitost systému",
     "SYS_VOLUME_TOGGLE_MUTE": "Zapnout/vypnout zvuk systému",

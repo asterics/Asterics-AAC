@@ -176,6 +176,7 @@
     "STEP_FORWARD": "خطوة إلى الأمام",
     "SYS_ENTER_FULLSCREEN": "أدخل ملء الشاشة",
     "SYS_LEAVE_FULLSCREEN": "الخروج من ملء الشاشة",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "تحديث العناصر الحية",
     "SYS_VOLUME_DOWN": "خفض صوت النظام",
     "SYS_VOLUME_TOGGLE_MUTE": "تبديل كتم صوت النظام",

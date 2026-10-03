@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Step forward",
     "SYS_ENTER_FULLSCREEN": "Tam ekrana geç",
     "SYS_LEAVE_FULLSCREEN": "Tam ekrandan çık",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Update live elements",
     "SYS_VOLUME_DOWN": "Sistem sesini azalt",
     "SYS_VOLUME_TOGGLE_MUTE": "Sistem sesini aç/kapat",

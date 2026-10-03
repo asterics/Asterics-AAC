@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Stega framåt",
     "SYS_ENTER_FULLSCREEN": "Öppna helskärm",
     "SYS_LEAVE_FULLSCREEN": "Avsluta helskärm",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Uppdatera levande element",
     "SYS_VOLUME_DOWN": "Systemets volym ner",
     "SYS_VOLUME_TOGGLE_MUTE": "Växla systemets volym tyst",

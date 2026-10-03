@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Step forward",
     "SYS_ENTER_FULLSCREEN": "כניסה למסך מלא",
     "SYS_LEAVE_FULLSCREEN": "יציאה ממסך מלא",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Update live elements",
     "SYS_VOLUME_DOWN": "System volume down",
     "SYS_VOLUME_TOGGLE_MUTE": "Toggle system volume mute",

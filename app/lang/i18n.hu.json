@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Előrébb léptetés",
     "SYS_ENTER_FULLSCREEN": "Váltás teljes képernyőre",
     "SYS_LEAVE_FULLSCREEN": "Kilépés teljes képernyőből",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Dinamikus kártyák frissítése",
     "SYS_VOLUME_DOWN": "Rendszer hangerő halkítás",
     "SYS_VOLUME_TOGGLE_MUTE": "Rendszerhangerő némításának ki- és bekapcsolása",

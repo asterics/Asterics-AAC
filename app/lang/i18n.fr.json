@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Suivant",
     "SYS_ENTER_FULLSCREEN": "Passer en mode plein écran",
     "SYS_LEAVE_FULLSCREEN": "Quitter le mode plein écran",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Mettre à jour les éléments en direct",
     "SYS_VOLUME_DOWN": "Diminuer le volume du système",
     "SYS_VOLUME_TOGGLE_MUTE": "Activer/désactiver le son du système",

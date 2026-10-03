@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Vorwärts springen",
     "SYS_ENTER_FULLSCREEN": "In den Vollbildmodus wechseln",
     "SYS_LEAVE_FULLSCREEN": "Vollbildmodus beenden",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Live-Elemente aktualisieren",
     "SYS_VOLUME_DOWN": "Systemlautstärke vermindern",
     "SYS_VOLUME_TOGGLE_MUTE": "Systemlautstärke umschalten",

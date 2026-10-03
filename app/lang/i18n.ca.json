@@ -176,6 +176,7 @@
     "STEP_FORWARD": "Avançar",
     "SYS_ENTER_FULLSCREEN": "Pantalla completa",
     "SYS_LEAVE_FULLSCREEN": "Surt de pantalla completa",
+    "SYS_TOGGLE_FULLSCREEN": "Toggle fullscreen",
     "SYS_UPDATE_LIVE_ELEMENTS": "Actualitzar dades en temps real",
     "SYS_VOLUME_DOWN": "Baixar el volum del video",
     "SYS_VOLUME_TOGGLE_MUTE": "Alternar el mode silenci del sistema",
