@@ -15,6 +15,9 @@ class SettingsApp {
         this.unlockPasscode = settings.unlockPasscode;
         this.syncNavigation = settings.syncNavigation;
         this.externalSpeechServiceUrl = settings.externalSpeechServiceUrl;
+        this.kioskModeOnStartup = settings.kioskModeOnStartup || false;
+        this.fullscreenOnStartup = settings.fullscreenOnStartup || false;
+        this.lockOnStartup = settings.lockOnStartup || false;
 
         convertServiceLocal.updateDataModel(this);
     }

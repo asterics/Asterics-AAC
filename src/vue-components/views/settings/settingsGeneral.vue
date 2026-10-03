@@ -30,6 +30,18 @@
                     <input class="five columns" id="unlockPass" type="number" v-model="appSettings.unlockPasscode" @input="appSettings.unlockPasscode = appSettings.unlockPasscode.substring(0, 6); saveAppSettings(appSettings)" :placeholder="$t('noPasscodeBracket')"/>
                     <button class="three columns" @click="appSettings.unlockPasscode = null; saveAppSettings(appSettings)">{{ $t('reset') }}</button>
                 </div>
+                <div class="srow">
+                    <input id="chkLockOnStartup" type="checkbox" v-model="appSettings.lockOnStartup" @change="saveAppSettings(appSettings)"/>
+                    <label for="chkLockOnStartup">{{ $t('lockOnStartup') }}</label>
+                </div>
+                <div class="srow">
+                    <input id="chkFullscreenOnStartup" type="checkbox" v-model="appSettings.fullscreenOnStartup" @change="saveAppSettings(appSettings)"/>
+                    <label for="chkFullscreenOnStartup">{{ $t('fullscreenOnStartup') }}</label>
+                </div>
+                <div class="srow">
+                    <input id="chkKioskModeOnStartup" type="checkbox" v-model="appSettings.kioskModeOnStartup" @change="saveAppSettings(appSettings)"/>
+                    <label for="chkKioskModeOnStartup">{{ $t('kioskModeOnStartup') }}</label>
+                </div>
             </div>
         </div>
         <div class="srow">
