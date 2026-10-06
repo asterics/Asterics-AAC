@@ -1,8 +1,9 @@
 <template>
     <div ref="mainContainer" :style="`flex: 1 1 auto; max-width: 100%; min-height: 0; cursor: ${cursorType}`">
-        <grid-layout ref="gridLayout" v-if="gridData && oneElementSize" :key="gridData.id + gridData.gridElements.length + gridData.rowCount + gridData.minColumnCount"
+        <grid-layout ref="gridLayout" v-if="gridData && oneElementSize" :key="gridData.id + gridData.gridElements.length + gridData.rowCount + gridData.minColumnCount + (gridData.backgroundImage || '')"
                      :elements="gridData.gridElements" :render-component="AppGridElement"
                      :background-color="gridData.backgroundColor || metadata.colorConfig.gridBackgroundColor"
+                     :background-image="gridData.backgroundImage"
                      :rows="gridData.rowCount" :columns="gridData.minColumnCount"
                      :metadata="metadata" :one-element-size="oneElementSize" v-on="$listeners" v-bind="$attrs"
                      :show-resize-handle="editable" :editable="editable" :background-lines="editable"

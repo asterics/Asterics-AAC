@@ -13,7 +13,10 @@
                     <img class="me-1" v-if="gridElement.image && (gridElement.image.data || gridElement.image.url)" height="30" :src="gridElement.image.data || gridElement.image.url"/>
                     <span>{{ gridElement.label | extractTranslation }}</span>
                 </div>
-                <div v-if="gridElement.type !== GridElement.ELEMENT_TYPE_NORMAL">
+                <div v-if="gridElement.type === GridElement.ELEMENT_TYPE_COMIC_BUBBLE">
+                    <span class="mx-2"><i class="fas fa-comment-dots me-1"></i>{{ getElementTypeName(gridElement.type) }}</span>
+                </div>
+                <div v-if="gridElement.type !== GridElement.ELEMENT_TYPE_NORMAL && gridElement.type !== GridElement.ELEMENT_TYPE_COMIC_BUBBLE">
                     <span class="mx-2">{{ gridElement.type | translate }}</span>
                 </div>
             </div>
@@ -24,6 +27,7 @@
 <script>
 
     import {GridElement} from "../../js/model/GridElement.js";
+    import {i18nService} from "../../js/service/i18nService.js";
 
     export default {
         props: ["header", "gridElement", "openHelpFn", "closeFn"],
@@ -33,6 +37,12 @@
             }
         },
         methods: {
+            getElementTypeName(type) {
+                if (type === GridElement.ELEMENT_TYPE_COMIC_BUBBLE) {
+                    return i18nService.t('newComicBubble') || 'Bocadillo de cómic';
+                }
+                return i18nService.te(type) ? i18nService.t(type) : (i18nService.te(`ELEMENT_TYPE_${type}`) ? i18nService.t(`ELEMENT_TYPE_${type}`) : type);
+            }
         },
         mounted() {
         },
