@@ -62,17 +62,18 @@
             inputDigit(digit) {
                 this.resetTimeout();
                 this.inputPasscode = this.inputPasscode + digit;
+                let masterPossible = this.masterkeyPossible &&  this.inputPasscode.startsWith('4');
                 if (this.inputPasscode === this.passcode) {
                     this.$emit('unlock');
                     this.$emit('close');
-                } else if (!this.masterkeyPossible && this.inputPasscode.length >= this.passcode.length) {
+                } else if (!masterPossible && this.inputPasscode.length >= this.passcode.length) {
                     this.$emit('close');
-                } else if (this.masterkeyPossible && this.inputPasscode.length === 10) {
+                } else if (masterPossible && this.inputPasscode.length === 10) {
                     this.$emit('unlock');
                     this.$emit('close');
                 }
             },
-            resetTimeout() {
+            resetTimeout(firstTime) {
                 clearTimeout(this.timeoutHandler);
                 clearTimeout(this.timeoutMasterkeyHandler);
                 this.timeoutHandler = setTimeout(() => {
@@ -80,7 +81,7 @@
                 }, 5000);
                 this.timeoutMasterkeyHandler = setTimeout(() => {
                     this.masterkeyPossible = false;
-                }, 500);
+                }, firstTime ? 1000 : 300);
             }
         },
         mounted() {
@@ -92,7 +93,7 @@
                 }
             });
             this.keyHandler.startListening();
-            this.resetTimeout();
+            this.resetTimeout(true);
         },
         beforeDestroy() {
             this.keyHandler.destroy();
