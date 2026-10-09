@@ -5,6 +5,7 @@ import { GridActionSpeakCustom } from './GridActionSpeakCustom';
 import { GridActionNavigate } from './GridActionNavigate';
 import { GridActionARE } from './GridActionARE';
 import { GridActionOpenHAB } from './GridActionOpenHAB';
+import { GridActionHomeAssistant } from './GridActionHomeAssistant';
 import { GridActionPredict } from './GridActionPredict';
 import { GridActionCollectElement } from './GridActionCollectElement';
 import { constants } from '../util/constants';
@@ -71,6 +72,7 @@ class GridElement extends Model({
             GridActionCollectElement,
             GridActionARE,
             GridActionOpenHAB,
+            GridActionHomeAssistant,
             GridActionWebradio,
             GridActionYoutube,
             GridActionPodcast,
