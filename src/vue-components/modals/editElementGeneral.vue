@@ -130,6 +130,7 @@
     import { GridData } from '../../js/model/GridData';
     import { GridElement } from '../../js/model/GridElement';
     import { ColorConfig } from '../../js/model/ColorConfig';
+    import {colorUtil} from "../../js/util/colorUtil";
 
     export default {
         components: { AppGridDisplay, SliderInput, Accordion },
@@ -207,7 +208,7 @@
             helpService.setHelpLocation('03_appearance_layout', '#edit-modal');
             dataService.getMetadata().then(metadata => {
                 this.metadata = metadata;
-                this.colorCategories = MetaData.getActiveColorScheme(metadata).categories;
+                this.colorCategories = colorUtil.getActiveColorScheme(metadata).categories;
                 if (!this.colorCategories.includes(this.gridElement.colorCategory)) {
                     this.colorCategoryNotFitting = this.gridElement.colorCategory;
                 }

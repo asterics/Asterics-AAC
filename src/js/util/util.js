@@ -372,7 +372,7 @@ util.getRGB = function (hexOrCssRGB) {
     } else if (hexOrCssRGB && hexOrCssRGB.indexOf('rgb') === 0) {
         return util.cssRGBToRGB(hexOrCssRGB);
     }
-    return null;
+    return hexOrCssRGB;
 };
 
 /**

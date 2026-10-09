@@ -51,37 +51,6 @@ class MetaData extends Model({
         return JSON.stringify(comp1) == JSON.stringify(comp2);
     }
 
-    static getUseColorScheme(metadata) {
-        if (!metadata || !metadata.colorConfig || !metadata.colorConfig.colorSchemesActivated) {
-            return null;
-        }
-        return MetaData.getActiveColorScheme(metadata);
-    }
-
-    static getActiveColorScheme(metadata) {
-        metadata = metadata || new MetaData();
-        return (
-            constants.DEFAULT_COLOR_SCHEMES.filter(
-                (scheme) => scheme.name === metadata.colorConfig.activeColorScheme
-            )[0] || constants.DEFAULT_COLOR_SCHEMES[0]
-        );
-    }
-
-    static getElementColor(gridElement = {}, metadata, fallbackColor) {
-        metadata = metadata || new MetaData();
-        let defaultColor = gridElement.backgroundColor || fallbackColor || metadata.colorConfig.elementBackgroundColor || constants.DEFAULT_ELEMENT_BACKGROUND_COLOR;
-        let colorScheme = MetaData.getUseColorScheme(metadata);
-        if (!colorScheme) {
-            return defaultColor;
-        }
-        let index = colorScheme.categories.indexOf(gridElement.colorCategory);
-        if (index === -1 && colorScheme.mappings) {
-            let mapped = colorScheme.mappings[gridElement.colorCategory];
-            index = colorScheme.categories.indexOf(mapped);
-        }
-        return index === -1 ? defaultColor : colorScheme.colors[index];
-    }
-
     static getModelName() {
         return 'MetaData';
     }
