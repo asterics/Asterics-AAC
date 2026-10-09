@@ -43,9 +43,15 @@
                         </select>
                     </div>
                 </div>
-                <div class="srow">
-                    <input type="checkbox" id="inputDontCollect" v-if="gridElement" v-model="gridElement.dontCollect"/>
-                    <label for="inputDontCollect">{{ $t('dontAddElementToCollectElement') }}</label>
+                <div class="row">
+                    <label class="col-sm-2" for="addElementToCollectElement">{{ $t('addElementToCollectElement') }}</label>
+                    <div class="col-sm-7">
+                        <select class="col-12" id="addElementToCollectElement" v-model="addElementToCollectElement">
+                            <option :value="undefined">{{ $t('automatic') }}</option>
+                            <option :value="true">{{ $t('yes') }}</option>
+                            <option :value="false">{{ $t('no') }}</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="srow mb-5">
                     <input type="checkbox" id="toggleInBar" v-if="gridElement" v-model="gridElement.toggleInBar"/>
@@ -152,6 +158,18 @@
             }
         },
         computed: {
+            addElementToCollectElement: {
+                get() {
+                    if (this.gridElement.dontCollect) {
+                        return false;
+                    }
+                    return this.gridElement.forceCollect ? true : undefined;
+                },
+                set(selectedCollectOption) {
+                    this.$set(this.gridElement, 'dontCollect', selectedCollectOption === false);
+                    this.$set(this.gridElement, 'forceCollect', selectedCollectOption === true);
+                }
+            },
             selectLanguages() {
                 if (this.selectAllLanguages) {
                     return this.allLanguages;

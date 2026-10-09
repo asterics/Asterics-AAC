@@ -41,6 +41,7 @@ class GridElement extends Model({
     colorCategory: [String],
     hidden: [Boolean],
     dontCollect: [Boolean],
+    forceCollect: [Boolean],
     toggleInBar: [Boolean],
     image: [GridImage],
     actions: [Object],
