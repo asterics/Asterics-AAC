@@ -15,9 +15,16 @@ import ProgressBarModal from '../../vue-components/modals/progressBarModal.vue';
 import SearchModal from "../../vue-components/modals/searchModal.vue";
 import MessageBox from "../../vue-components/modals/messageBox.vue";
 import { systemActionService } from '../service/systemActionService';
+import { stateService } from '../service/stateService';
 
 let MainVue = {};
 let app = null;
+
+const FULLSCREEN_EXIT_START_RATIO = 0.10;
+const FULLSCREEN_EXIT_DISTANCE_RATIO = 0.20;
+const FULLSCREEN_EXIT_MIN_DISTANCE = 100;
+let touchStartY = null;
+
 let modalTypes = {
     MODAL_SEARCH: 'MODAL_SEARCH',
     MODAL_PROGRESSBAR: 'MODAL_PROGRESSBAR',
@@ -30,6 +37,12 @@ MainVue.setViewComponent = function (component, properties) {
 
 MainVue.isSidebarOpen = function () {
     return app.showSidebar;
+};
+
+MainVue.restoreSidebar = function () {
+    if (stateService.getState(constants.STATE_SIDEBAR_DESIRED_OPEN)) {
+        $(document).trigger(constants.EVENT_SIDEBAR_OPEN);
+    }
 };
 
 MainVue.setTooltip = function (html, options) {
@@ -141,6 +154,7 @@ MainVue.searchModalOpened = function() {
 };
 
 MainVue.init = function () {
+    stateService.setState(constants.STATE_SIDEBAR_DESIRED_OPEN, true);
     Vue.use(VueI18n);
     return i18nService.getVueI18n().then((i18n) => {
         app = new Vue({
@@ -174,6 +188,7 @@ MainVue.init = function () {
                     this.componentKey++; //forces to update the view, even with same component (e.g. grid view, other page)
                 },
                 closeSidebar() {
+                    stateService.setState(constants.STATE_SIDEBAR_DESIRED_OPEN, false);
                     $(document).trigger(constants.EVENT_SIDEBAR_CLOSE);
                 },
                 openSidebar() {
@@ -260,21 +275,59 @@ MainVue.init = function () {
                     );
                 });
                 inputEventHandler.global
-                    .onSwipedDown(openSidebarIfFullscreen)
-                    .onEscape(openSidebarIfFullscreen)
-                    .onExitFullscreen(openSidebarIfFullscreen);
+                    .onTouchStart(onTouchStart)
+                    .onTouchMove(checkFullscreenExit)
+                    .onTouchEnd(resetTouchStart)
+                    .onEscape(systemActionService.exitFullscreen)
+                    .onExitFullscreen(systemActionService.exitFullscreen);
                 inputEventHandler.global.startListening();
                 thiz.openSidebar();
-
-                async function openSidebarIfFullscreen() {
-                    await systemActionService.exitFullscreen();
-                    thiz.openSidebar();
-                }
             }
         });
         return Promise.resolve();
     });
 };
+
+function onTouchStart(event) {
+    touchStartY = event.touches.length === 1
+        ? event.touches[0].clientY
+        : null;
+}
+
+async function checkFullscreenExit(event) {
+    if (touchStartY === null) {
+        return;
+    }
+
+    if (event.touches.length !== 1) {
+        resetTouchStart();
+        return;
+    }
+
+    const minDistance = Math.max(
+        FULLSCREEN_EXIT_MIN_DISTANCE,
+        window.innerHeight * FULLSCREEN_EXIT_DISTANCE_RATIO
+    );
+
+    if (touchStartY > window.innerHeight * FULLSCREEN_EXIT_START_RATIO ||
+        event.touches[0].clientY - touchStartY <= minDistance) {
+        return;
+    }
+
+    resetTouchStart();
+
+    if (util.isFullscreen() || (await dataService.getMetadata()).fullscreen) {
+        if (util.isFullscreen()) {
+            util.closeFullscreen();
+        } else {
+            await systemActionService.exitFullscreen();
+        }
+    }
+}
+
+function resetTouchStart() {
+    touchStartY = null;
+}
 
 function setupContextMenu() {
     let CONTEXT_ADD_ONLINE = 'CONTEXT_ADD_ONLINE';
