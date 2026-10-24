@@ -35,9 +35,9 @@ function Constructor() {
     let thiz = {};
 
     // options
+    const SWIPE_MIN_DISTANCE = 100;
     const SWIPE_DOWN_FROM_TOP_ZONE_RATIO = 0.10;
     const SWIPE_DOWN_FROM_TOP_DISTANCE_RATIO = 0.20;
-    let touchMoveLength = 100;
     let mouseBorderThreshold = 5;
 
     // internal
@@ -305,22 +305,22 @@ function Constructor() {
         callHandlers(touchMoveHandlers, [event], true);
     
         if (event.touches.length === 1 && !_swipeDetected) {
-            if (event.touches[0].clientY > _touchMoveBeginPosY + touchMoveLength) {
+            if (event.touches[0].clientY > _touchMoveBeginPosY + SWIPE_MIN_DISTANCE) {
                 _swipeDetected = true;
                 callHandlers(swipeDownHandlers);
-            } else if (event.touches[0].clientY < _touchMoveBeginPosY - touchMoveLength) {
+            } else if (event.touches[0].clientY < _touchMoveBeginPosY - SWIPE_MIN_DISTANCE) {
                 _swipeDetected = true;
                 callHandlers(swipeUpHandlers);
-            } else if (event.touches[0].clientX > _touchMoveBeginPosX + touchMoveLength) {
+            } else if (event.touches[0].clientX > _touchMoveBeginPosX + SWIPE_MIN_DISTANCE) {
                 _swipeDetected = true;
                 callHandlers(swipeRightHandles);
-            } else if (event.touches[0].clientX < _touchMoveBeginPosX - touchMoveLength) {
+            } else if (event.touches[0].clientX < _touchMoveBeginPosX - SWIPE_MIN_DISTANCE) {
                 _swipeDetected = true;
                 callHandlers(swipeLeftHandles);
             }
         }
     
-        if (event.touches.length === 1 && !_swipeDownFromTopDetected && _touchMoveBeginPosY <= window.innerHeight * SWIPE_DOWN_FROM_TOP_ZONE_RATIO && event.touches[0].clientY > _touchMoveBeginPosY + Math.max(touchMoveLength, window.innerHeight * SWIPE_DOWN_FROM_TOP_DISTANCE_RATIO)) {
+        if (event.touches.length === 1 && !_swipeDownFromTopDetected && _touchMoveBeginPosY <= window.innerHeight * SWIPE_DOWN_FROM_TOP_ZONE_RATIO && event.touches[0].clientY > _touchMoveBeginPosY + Math.max(SWIPE_MIN_DISTANCE, window.innerHeight * SWIPE_DOWN_FROM_TOP_DISTANCE_RATIO)) {
             _swipeDownFromTopDetected = true;
             callHandlers(swipeDownFromTopHandlers, [], true);
         }
