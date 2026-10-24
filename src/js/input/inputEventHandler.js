@@ -35,7 +35,7 @@ function Constructor() {
     let thiz = {};
 
     // options
-    const SWIPE_MIN_DISTANCE = 100;
+    const SWIPE_DISTANCE = 100;
     const SWIPE_DOWN_FROM_TOP_ZONE_RATIO = 0.10;
     const SWIPE_DOWN_FROM_TOP_DISTANCE_RATIO = 0.20;
     let mouseBorderThreshold = 5;
@@ -304,23 +304,23 @@ function Constructor() {
     function touchMoveListener(event) {
         callHandlers(touchMoveHandlers, [event], true);
     
-        if (event.touches.length === 1 && !_swipeDetected) {
-            if (event.touches[0].clientY > _touchMoveBeginPosY + SWIPE_MIN_DISTANCE) {
+        if (!_swipeDetected) {
+            if (event.touches[0].clientY > _touchMoveBeginPosY + SWIPE_DISTANCE) {
                 _swipeDetected = true;
                 callHandlers(swipeDownHandlers);
-            } else if (event.touches[0].clientY < _touchMoveBeginPosY - SWIPE_MIN_DISTANCE) {
+            } else if (event.touches[0].clientY < _touchMoveBeginPosY - SWIPE_DISTANCE) {
                 _swipeDetected = true;
                 callHandlers(swipeUpHandlers);
-            } else if (event.touches[0].clientX > _touchMoveBeginPosX + SWIPE_MIN_DISTANCE) {
+            } else if (event.touches[0].clientX > _touchMoveBeginPosX + SWIPE_DISTANCE) {
                 _swipeDetected = true;
                 callHandlers(swipeRightHandles);
-            } else if (event.touches[0].clientX < _touchMoveBeginPosX - SWIPE_MIN_DISTANCE) {
+            } else if (event.touches[0].clientX < _touchMoveBeginPosX - SWIPE_DISTANCE) {
                 _swipeDetected = true;
                 callHandlers(swipeLeftHandles);
             }
         }
     
-        if (event.touches.length === 1 && !_swipeDownFromTopDetected && _touchMoveBeginPosY <= window.innerHeight * SWIPE_DOWN_FROM_TOP_ZONE_RATIO && event.touches[0].clientY > _touchMoveBeginPosY + Math.max(SWIPE_MIN_DISTANCE, window.innerHeight * SWIPE_DOWN_FROM_TOP_DISTANCE_RATIO)) {
+        if (!_swipeDownFromTopDetected && _touchMoveBeginPosY <= window.innerHeight * SWIPE_DOWN_FROM_TOP_ZONE_RATIO && event.touches[0].clientY > _touchMoveBeginPosY + window.innerHeight * SWIPE_DOWN_FROM_TOP_DISTANCE_RATIO) {
             _swipeDownFromTopDetected = true;
             callHandlers(swipeDownFromTopHandlers, [], true);
         }
@@ -332,21 +332,26 @@ function Constructor() {
             preventDefault: () => {}
         })
         callHandlers(touchEndHandlers, [event], true);
-        _touchMoveBeginPosX = null;
-        _touchMoveBeginPosY = null;
+    
+        if (event.touches.length === 0) {
+            _touchMoveBeginPosX = null;
+            _touchMoveBeginPosY = null;
+        }
     }
     
     function touchStartListener(event) {
-        _touchMoveBeginPosX = event.touches[0].clientX;
-        _touchMoveBeginPosY = event.touches[0].clientY;
-        _swipeDetected = false;
-        _swipeDownFromTopDetected = false;
-    
         keyDownListener({
             keyCode: InputEventKey.KEY_TAP,
             preventDefault: () => {}
         })
         callHandlers(touchStartHandlers, [event], true);
+
+        if (event.touches.length === 1) {
+            _touchMoveBeginPosX = event.touches[0].clientX;
+            _touchMoveBeginPosY = event.touches[0].clientY;
+            _swipeDetected = false;
+            _swipeDownFromTopDetected = false;
+        }
     }
 
     function keyDownListener(event) {
@@ -500,40 +505,4 @@ function Constructor() {
     return thiz;
 }
 
-inputEventHandler.global = inputEventHandler.instance();
-(function () {
-    let panel = null;
-    let positions = {};
-
-    function showTouch(event) {
-        const phase = event.type.replace('touch', '').toUpperCase();
-        const touch = event.type === 'touchend' || event.type === 'touchcancel'
-            ? event.changedTouches[0]
-            : event.touches[0];
-
-        if (!touch) return;
-
-        if (phase === 'START') positions = {};
-
-        const x = touch.clientX;
-        const y = touch.clientY;
-        positions[phase] = `X: ${x.toFixed(1)}px (${(x / window.innerWidth * 100).toFixed(1)}%)  Y: ${y.toFixed(1)}px (${(y / window.innerHeight * 100).toFixed(1)}%)`;
-
-        if (!panel) {
-            panel = document.createElement('div');
-            panel.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:2147483647;padding:10px;background:rgba(0,0,0,.85);color:white;font:11px monospace;white-space:pre-wrap;pointer-events:none;';
-            document.body.appendChild(panel);
-        }
-
-        panel.textContent =
-            `START   ${positions.START || '-'}\n` +
-            `MOVE    ${positions.MOVE || '-'}\n` +
-            `END     ${positions.END || '-'}\n` +
-            `CANCEL  ${positions.CANCEL || '-'}`;
-    }
-
-    ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(type => {
-        document.addEventListener(type, showTouch, { capture: true, passive: true });
-    });
-})();
 export { inputEventHandler };
