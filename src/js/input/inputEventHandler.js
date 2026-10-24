@@ -122,7 +122,7 @@ function Constructor() {
     thiz.onSwipedDown = function (fn) {
         return registerHandler(fn, swipeDownHandlers);
     };
-    
+
     thiz.onSwipedUp = function (fn) {
         return registerHandler(fn, swipeUpHandlers);
     };
