@@ -501,5 +501,39 @@ function Constructor() {
 }
 
 inputEventHandler.global = inputEventHandler.instance();
+(function () {
+    let panel = null;
+    let positions = {};
 
+    function showTouch(event) {
+        const phase = event.type.replace('touch', '').toUpperCase();
+        const touch = event.type === 'touchend' || event.type === 'touchcancel'
+            ? event.changedTouches[0]
+            : event.touches[0];
+
+        if (!touch) return;
+
+        if (phase === 'START') positions = {};
+
+        const x = touch.clientX;
+        const y = touch.clientY;
+        positions[phase] = `X: ${x.toFixed(1)}px (${(x / window.innerWidth * 100).toFixed(1)}%)  Y: ${y.toFixed(1)}px (${(y / window.innerHeight * 100).toFixed(1)}%)`;
+
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:2147483647;padding:10px;background:rgba(0,0,0,.85);color:white;font:11px monospace;white-space:pre-wrap;pointer-events:none;';
+            document.body.appendChild(panel);
+        }
+
+        panel.textContent =
+            `START   ${positions.START || '-'}\n` +
+            `MOVE    ${positions.MOVE || '-'}\n` +
+            `END     ${positions.END || '-'}\n` +
+            `CANCEL  ${positions.CANCEL || '-'}`;
+    }
+
+    ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(type => {
+        document.addEventListener(type, showTouch, { capture: true, passive: true });
+    });
+})();
 export { inputEventHandler };
