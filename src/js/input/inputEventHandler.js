@@ -505,4 +505,6 @@ function Constructor() {
     return thiz;
 }
 
+inputEventHandler.global = inputEventHandler.instance();
+
 export { inputEventHandler };
