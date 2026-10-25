@@ -35,17 +35,22 @@ function Constructor() {
     let thiz = {};
 
     // options
-    let touchMoveLength = 100;
+    const SWIPE_DISTANCE = 100;
+    const SWIPE_DOWN_FROM_TOP_ZONE_RATIO = 0.10;
+    const SWIPE_DOWN_FROM_TOP_DISTANCE_RATIO = 0.20;
     let mouseBorderThreshold = 5;
 
     // internal
     let _touchMoveBeginPosX = null;
     let _touchMoveBeginPosY = null;
+    let _swipeDetected = false;
+    let _swipeDownFromTopDetected = false;
     let mouseBorderHandlers = [];
     let swipeUpHandlers = [];
     let swipeDownHandlers = [];
     let swipeLeftHandles = [];
     let swipeRightHandles = [];
+    let swipeDownFromTopHandlers = [];
     let touchMoveHandlers = [];
     let touchStartHandlers = [];
     let touchEndHandlers = [];
@@ -130,6 +135,10 @@ function Constructor() {
         return registerHandler(fn, swipeLeftHandles);
     };
 
+    thiz.onSwipedDownFromTop = function (fn) {
+        return registerHandler(fn, swipeDownFromTopHandlers);
+    };
+    
     thiz.onEscape = function (fn) {
         return registerKey(new InputEventKey({ keyCode: 27 }), fn); //ESC
     };
@@ -179,6 +188,7 @@ function Constructor() {
         swipeDownHandlers = swipeDownHandlers.filter(filterFn);
         swipeLeftHandles = swipeLeftHandles.filter(filterFn);
         swipeRightHandles = swipeRightHandles.filter(filterFn);
+        swipeDownFromTopHandlers = swipeDownFromTopHandlers.filter(filterFn);
         touchMoveHandlers = touchMoveHandlers.filter(filterFn);
         touchStartHandlers = touchStartHandlers.filter(filterFn);
         touchEndHandlers = touchEndHandlers.filter(filterFn);
@@ -293,44 +303,58 @@ function Constructor() {
 
     function touchMoveListener(event) {
         callHandlers(touchMoveHandlers, [event], true);
-        if (!_touchMoveBeginPosY || !_touchMoveBeginPosX) {
-            _touchMoveBeginPosY = event.touches[0].clientY;
-            _touchMoveBeginPosX = event.touches[0].clientX;
-        } else if (event.touches[0].clientY > _touchMoveBeginPosY + touchMoveLength) {
-            log.debug('swipe down.');
-            _touchMoveBeginPosY = null;
-            callHandlers(swipeDownHandlers);
-        } else if (event.touches[0].clientY < _touchMoveBeginPosY - touchMoveLength) {
-            log.debug('swipe up.');
-            _touchMoveBeginPosY = null;
-            callHandlers(swipeUpHandlers);
-        } else if (event.touches[0].clientX > _touchMoveBeginPosX + touchMoveLength) {
-            log.debug('swipe right.');
-            _touchMoveBeginPosX = null;
-            callHandlers(swipeRightHandles);
-        } else if (event.touches[0].clientX < _touchMoveBeginPosX - touchMoveLength) {
-            log.debug('swipe left.');
-            _touchMoveBeginPosX = null;
-            callHandlers(swipeLeftHandles);
+    
+        if (!_swipeDetected) {
+            if (event.touches[0].clientY > _touchMoveBeginPosY + SWIPE_DISTANCE) {
+                _swipeDetected = true;
+                callHandlers(swipeDownHandlers);
+            } else if (event.touches[0].clientY < _touchMoveBeginPosY - SWIPE_DISTANCE) {
+                _swipeDetected = true;
+                callHandlers(swipeUpHandlers);
+            } else if (event.touches[0].clientX > _touchMoveBeginPosX + SWIPE_DISTANCE) {
+                _swipeDetected = true;
+                callHandlers(swipeRightHandles);
+            } else if (event.touches[0].clientX < _touchMoveBeginPosX - SWIPE_DISTANCE) {
+                _swipeDetected = true;
+                callHandlers(swipeLeftHandles);
+            }
+        }
+    
+        if (!_swipeDownFromTopDetected && _touchMoveBeginPosY <= window.innerHeight * SWIPE_DOWN_FROM_TOP_ZONE_RATIO && event.touches[0].clientY > _touchMoveBeginPosY + window.innerHeight * SWIPE_DOWN_FROM_TOP_DISTANCE_RATIO) {
+            _swipeDownFromTopDetected = true;
+            callHandlers(swipeDownFromTopHandlers, [], true);
         }
     }
-
+    
     function touchEndListener(event) {
         keyUpListener({
             keyCode: InputEventKey.KEY_TAP,
             preventDefault: () => {}
         })
         callHandlers(touchEndHandlers, [event], true);
-        _touchMoveBeginPosX = null;
-        _touchMoveBeginPosY = null;
+    
+        if (event.touches.length === 0) {
+            _touchMoveBeginPosX = null;
+            _touchMoveBeginPosY = null;
+        }
     }
-
+    
     function touchStartListener(event) {
         keyDownListener({
             keyCode: InputEventKey.KEY_TAP,
             preventDefault: () => {}
         })
         callHandlers(touchStartHandlers, [event], true);
+    
+        if (event.touches.length === 1) {
+            _touchMoveBeginPosX = event.touches[0].clientX;
+            _touchMoveBeginPosY = event.touches[0].clientY;
+            _swipeDetected = false;
+            _swipeDownFromTopDetected = false;
+        } else {
+            _swipeDetected = true;
+            _swipeDownFromTopDetected = true;
+        }
     }
 
     function keyDownListener(event) {
