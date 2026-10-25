@@ -345,12 +345,15 @@ function Constructor() {
             preventDefault: () => {}
         })
         callHandlers(touchStartHandlers, [event], true);
-
+    
         if (event.touches.length === 1) {
             _touchMoveBeginPosX = event.touches[0].clientX;
             _touchMoveBeginPosY = event.touches[0].clientY;
             _swipeDetected = false;
             _swipeDownFromTopDetected = false;
+        } else {
+            _swipeDetected = true;
+            _swipeDownFromTopDetected = true;
         }
     }
 
