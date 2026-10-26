@@ -9,6 +9,8 @@ body {
 }
 
 #app {
+    position: fixed;
+    inset: 0;
     background-color: #ffffff;
     color: #333333;
 }
