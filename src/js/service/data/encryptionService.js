@@ -118,6 +118,8 @@ encryptionService.encryptString = function (string, encryptionSalt) {
     let encryptedString = null;
     if (encryptionKey && !_isLocalUser) {
         encryptedString = sjcl.encrypt(encryptionKey, string, { iter: 1000 });
+        // flat copy, otherwise the string built by sjcl needs much more memory, see https://github.com/asterics/Asterics-AAC/issues/902
+        encryptedString = JSON.parse(JSON.stringify(encryptedString));
     } else {
         encryptedString = string;
     }
