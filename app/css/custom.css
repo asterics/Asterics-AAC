@@ -13,6 +13,7 @@ body {
     inset: 0;
     background-color: #ffffff;
     color: #333333;
+    color-scheme: only light;
 }
 
 * {
