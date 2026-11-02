@@ -45,6 +45,7 @@ function Constructor() {
     let _touchMoveBeginPosY = null;
     let _swipeDetected = false;
     let _swipeDownFromTopDetected = false;
+    let _ignoreSwipeGesture = false;
     let mouseBorderHandlers = [];
     let swipeUpHandlers = [];
     let swipeDownHandlers = [];
@@ -303,7 +304,11 @@ function Constructor() {
 
     function touchMoveListener(event) {
         callHandlers(touchMoveHandlers, [event], true);
-    
+
+        if (_ignoreSwipeGesture) {
+            return;
+        }
+
         if (!_swipeDetected) {
             if (event.touches[0].clientY > _touchMoveBeginPosY + SWIPE_DISTANCE) {
                 _swipeDetected = true;
@@ -351,9 +356,9 @@ function Constructor() {
             _touchMoveBeginPosY = event.touches[0].clientY;
             _swipeDetected = false;
             _swipeDownFromTopDetected = false;
+            _ignoreSwipeGesture = false;
         } else {
-            _swipeDetected = true;
-            _swipeDownFromTopDetected = true;
+            _ignoreSwipeGesture = true;
         }
     }
 
