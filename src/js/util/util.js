@@ -318,18 +318,6 @@ util.getElement = function (possibleElements, x, y) {
     }
 };
 
-/**
- * splits an array into smaller chunks, see https://stackoverflow.com/questions/8495687/split-array-into-chunks
- * @param array
- * @param chunkSize
- * @return {[]}
- */
-util.splitInChunks = function (array, chunkSize) {
-    let R = [];
-    for (let i = 0, len = array.length; i < len; i += chunkSize) R.push(array.slice(i, i + chunkSize));
-    return R;
-};
-
 util.openFullscreen = function () {
     let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     let elem = isSafari ? document.documentElement : document.body;

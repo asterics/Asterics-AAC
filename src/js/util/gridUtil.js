@@ -25,22 +25,28 @@ let NAVIGATION_ID_TO_LAST = 'NAVIGATION_ID_TO_LAST';
  * @param gridDataList list of grids where IDs should be regenerated
  * @return {[]} list of grids with regenerated IDs
  */
-gridUtil.regenerateIDs = function (gridDataList) {
+gridUtil.regenerateIDs = async function (gridDataList, options = {}) {
     let replacedIds = {};
     let returnList = [];
+    options.progressFn = options.progressFn || (() => {});
     gridDataList.forEach((gridData) => {
         let newId = modelUtil.generateId('grid-data');
         replacedIds[gridData.id] = newId;
         gridData._id = gridData.id = newId;
         gridData._rev = null;
     });
-    gridDataList.forEach((gridData) => {
+    let countAll = gridDataList.length;
+    let countDone = 0;
+    for (let gridData of gridDataList) {
         let json = JSON.stringify(gridData);
         Object.keys(replacedIds).forEach((oldId) => {
             json = json.replace(new RegExp(oldId, 'g'), replacedIds[oldId]);
         });
         returnList.push(JSON.parse(json));
-    });
+        await util.sleep(0);
+        countDone++;
+        options.progressFn(Math.round(100 * countDone / countAll));
+    }
     return {
         grids: returnList,
         idMapping: replacedIds
