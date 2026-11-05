@@ -474,6 +474,11 @@ async function addGridToPdf(doc, gridData, options, metadata, globalGrid) {
 function addLabelToPdf({doc, element, area, bgColor, label}) {
     let hasImg = element.image && (element.image.data || element.image.url);
     let fontSizeMM = area.height;
+    if (!hasImg && element.fontSizePct) {
+        fontSizeMM = area.height * (element.fontSizePct / 100);
+    } else if (!hasImg && metadata.textConfig.onlyTextFontSizePct) {
+        fontSizeMM = area.height * (metadata.textConfig.onlyTextFontSizePct / 100);
+    }
     let fontSizePt = (fontSizeMM / 0.352778);
     if (convertMode === TextConfig.CONVERT_MODE_UPPERCASE) {
         label = label.toLocaleUpperCase();
