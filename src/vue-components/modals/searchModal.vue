@@ -68,6 +68,7 @@
     import {collectElementService} from "../../js/service/collectElementService.js";
     import SearchBar from '../components/searchBar.vue';
     import {dataUtil} from "../../js/util/dataUtil";
+    import {util} from "../../js/util/util";
 
     export default {
         props: ['routeToEdit', 'options'],
@@ -110,7 +111,7 @@
             highlightSearch(text) {
                 let index = text.toLocaleLowerCase().indexOf(this.searchTerm.toLocaleLowerCase());
                 let realPart = text.substring(index, index + this.searchTerm.length);
-                return text.replace(realPart, `<b>${realPart}</b>`)
+                return `${util.escapeHtml(text.substring(0, index))}<b>${util.escapeHtml(realPart)}</b>${util.escapeHtml(text.substring(index + this.searchTerm.length))}`;
             },
             goToFirstResult(usePath) {
                 if (this.results && this.results.length > 0) {
