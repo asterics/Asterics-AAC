@@ -610,6 +610,10 @@ util.replaceAll = function(string, search, replace) {
     return string.replace(new RegExp(search, 'g'), replace);
 }
 
+util.escapeHtml = function(string) {
+    return string.replace(/[&<>"']/g, char => `&#${char.charCodeAt(0)};`);
+};
+
 /**
  * returns true if both dates are on the same calendar day
  * @param d1
