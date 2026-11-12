@@ -110,8 +110,9 @@
             },
             highlightSearch(text) {
                 let index = text.toLocaleLowerCase().indexOf(this.searchTerm.toLocaleLowerCase());
-                let realPart = text.substring(index, index + this.searchTerm.length);
-                return `${util.escapeHtml(text.substring(0, index))}<b>${util.escapeHtml(realPart)}</b>${util.escapeHtml(text.substring(index + this.searchTerm.length))}`;
+                let toHighlight = util.escapeHtml(text.substring(index, index + this.searchTerm.length));
+                text = util.escapeHtml(text);
+                return text.replace(toHighlight, `<b>${toHighlight}</b>`);
             },
             goToFirstResult(usePath) {
                 if (this.results && this.results.length > 0) {
