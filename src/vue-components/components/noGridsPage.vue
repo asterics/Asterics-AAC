@@ -126,7 +126,6 @@
             let thiz = this;
             thiz.gridPreviews = await boardService.query();
             thiz.selectLanguages = this.allLanguages.filter(lang => this.gridPreviews.some(preview => preview.languages.includes(lang.code)));
-            thiz.searchOptions.lang = thiz.selectLanguages.map(e => e.code).includes(i18nService.getAppLang()) ? i18nService.getAppLang() : "";
             thiz.gridPreviews = await boardService.query("", thiz.searchOptions);
         },
         beforeDestroy() {
