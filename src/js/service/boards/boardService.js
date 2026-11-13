@@ -93,7 +93,7 @@ function sortResults(results, options) {
     let appLang = i18nService.getAppLang();
     results.sort((a, b) => {
         let prioA = Number.isInteger(a.priority) ? a.priority : (a.priority[options.lang] || a.priority[appLang] || 0);
-        let prioB = Number.isInteger(b.priority) ? b.priority : (b.priority[options.lang] || a.priority[appLang] || 0);
+        let prioB = Number.isInteger(b.priority) ? b.priority : (b.priority[options.lang] || b.priority[appLang] || 0);
         if (prioA !== prioB) {
             return prioB - prioA;
         }
@@ -103,19 +103,11 @@ function sortResults(results, options) {
             if (aIsDemo) return 1;
             if (bIsDemo) return -1;
         }
-
-        let contentLang = i18nService.getContentLangBase();
         let aHasAppLang = a.languages.includes(appLang);
         let bHasAppLang = b.languages.includes(appLang);
-        let aHasContentLang = a.languages.includes(contentLang);
-        let bHasContentLang = b.languages.includes(contentLang);
         if (aHasAppLang !== bHasAppLang) {
             if (aHasAppLang) return -1;
             if (bHasAppLang) return 1;
-        }
-        if (aHasContentLang !== bHasContentLang) {
-            if (aHasContentLang) return -1;
-            if (bHasContentLang) return 1;
         }
         let nameA = util.isString(a.name) ? a.name : i18nService.getTranslation(a.name);
         let nameB = util.isString(b.name) ? b.name : i18nService.getTranslation(b.name);
