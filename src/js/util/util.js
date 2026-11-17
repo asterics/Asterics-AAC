@@ -69,11 +69,32 @@ util.throttle = function (fn, args, minPauseMs, key) {
 /**
  * copies the given text to clipboard
  * @param text
+ * @param skipPermissionCheck if true, manual permission query is skipped
  */
-util.copyToClipboard = function copyTextToClipboard(text) {
+util.copyToClipboard = async function (text, skipPermissionCheck = false) {
     if (!text) {
         return;
     }
+    lastClipboardData = text;
+
+    // 1. Try modern Async Clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (err) {
+            // 2. If permission check hasn't been skipped yet, query permission and retry recursively
+            if (!skipPermissionCheck) {
+                log.info('Checking permissions before retrying copy...');
+                const hasPermission = await util.checkPermission('clipboard-write');
+                if (hasPermission) {
+                    // Recursive call with skipPermissionCheck = true to avoid infinite loops
+                    return await util.copyToClipboard(text, true);
+                }
+            }
+        }
+    }
+
     let textArea = document.createElement('textarea');
     textArea.value = text;
     document.body.appendChild(textArea);
@@ -86,7 +107,6 @@ util.copyToClipboard = function copyTextToClipboard(text) {
     } catch (err) {
         log.warn('Unable to copy to clipboard.');
     }
-    lastClipboardData = text;
     document.body.removeChild(textArea);
 };
 
@@ -244,6 +264,26 @@ util.getClipboardImageAsBase64 = async function () {
 };
 
 /**
+ * Safely checks a permission status using navigator.permissions.query.
+ * @param {string} name - The permission name to check (e.g., 'clipboard-write', 'notifications').
+ * @returns {Promise<boolean>} Resolves to true if granted or promptable, false if denied or unsupported.
+ */
+util.checkPermission = async function (name) {
+    if (!navigator.permissions || typeof navigator.permissions.query !== 'function') {
+        return false;
+    }
+
+    try {
+        const permissionStatus = await navigator.permissions.query({ name: name });
+        return permissionStatus.state === 'granted' || permissionStatus.state === 'prompt';
+    } catch (err) {
+        // Catches TypeError in Firefox/Safari when query name is unsupported
+        log.warn(`Permission query for '${name}' is unsupported or failed.`);
+        return false;
+    }
+};
+
+/**
  * Helper to convert a Blob to a Base64 string
  */
 function blobToBase64(blob) {
@@ -278,18 +318,6 @@ util.getElement = function (possibleElements, x, y) {
     }
 };
 
-/**
- * splits an array into smaller chunks, see https://stackoverflow.com/questions/8495687/split-array-into-chunks
- * @param array
- * @param chunkSize
- * @return {[]}
- */
-util.splitInChunks = function (array, chunkSize) {
-    let R = [];
-    for (let i = 0, len = array.length; i < len; i += chunkSize) R.push(array.slice(i, i + chunkSize));
-    return R;
-};
-
 util.openFullscreen = function () {
     let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     let elem = isSafari ? document.documentElement : document.body;
@@ -301,7 +329,7 @@ util.openFullscreen = function () {
 };
 
 util.closeFullscreen = function () {
-    if (!document.fullscreenElement) {
+    if (!util.isFullscreen()) {
         return;
     }
     let closeFn =
@@ -314,6 +342,13 @@ util.closeFullscreen = function () {
     }
 };
 
+util.isFullscreen = function () {
+    return !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement
+    );
+}
+
 /**
  * converts HEX or CSS RGB string to RGB array
  * @param hexOrCssRGB
@@ -325,7 +360,7 @@ util.getRGB = function (hexOrCssRGB) {
     } else if (hexOrCssRGB && hexOrCssRGB.indexOf('rgb') === 0) {
         return util.cssRGBToRGB(hexOrCssRGB);
     }
-    return null;
+    return hexOrCssRGB;
 };
 
 /**
@@ -616,6 +651,10 @@ util.replaceAll = function(string, search, replace) {
     return string.replace(new RegExp(search, 'g'), replace);
 }
 
+util.escapeHtml = function(string) {
+    return string.replace(/[&<>"']/g, char => `&#${char.charCodeAt(0)};`);
+};
+
 /**
  * returns true if both dates are on the same calendar day
  * @param d1
@@ -651,6 +690,35 @@ util.isOnlyEmojis = function(str) {
 util.limitValue = function(value, min, max, defaultValue) {
     value = Number.isFinite(value) ? value : defaultValue;
     return Math.min(Math.max(value, min), max);
+}
+
+/**
+ * Rounds a number to a specified number of decimal places.
+ * @param {number} value - The number to round.
+ * @param {number} decimals - Number of decimal places (default 0).
+ * @returns {number}
+ */
+util.roundTo = function (value, decimals = 0) {
+    if (!Number.isFinite(value)) return value;
+    return Number(Math.round(Number(value + 'e' + decimals)) + 'e-' + decimals);
+}
+
+/**
+ * splits an array into chunks
+ * @param array
+ * @param chunkSize
+ * @return {*[]}
+ */
+util.chunkArray = function (array, chunkSize = 1) {
+    if (chunkSize <= 0) {
+        return array;
+    }
+
+    const chunks = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
 }
 
 export { util };

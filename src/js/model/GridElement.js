@@ -40,7 +40,8 @@ class GridElement extends Model({
     borderColor: [String], // only used for color mode: "both"!
     colorCategory: [String],
     hidden: [Boolean],
-    dontCollect: [Boolean],
+    dontCollect: [Boolean], // deprecated, replaced by collectMode
+    collectMode: [String],
     toggleInBar: [Boolean],
     image: [GridImage],
     actions: [Object],
@@ -58,15 +59,6 @@ class GridElement extends Model({
 
     hasSetPosition() {
         return this.x != null && this.x != undefined && this.y != null && this.y != undefined;
-    }
-
-    /**
-     * returns ID of Grid this element navigates to
-     * @return {[String | StringConstructor]|string|default.methods.gridTo.id|null}
-     */
-    getNavigateGridId() {
-        let navAction = this.actions.filter((action) => action.modelName === GridActionNavigate.getModelName())[0];
-        return navAction ? navAction.toGridId : null;
     }
 
     static getActionTypes() {
@@ -135,6 +127,9 @@ GridElement.ELEMENT_TYPE_DYNAMIC_GRID_PLACEHOLDER = 'ELEMENT_TYPE_DYNAMIC_GRID_P
 GridElement.ELEMENT_TYPE_UI_FILLER = 'ELEMENT_TYPE_UI_FILLER'; // only for rendering, not a real element type
 
 GridElement.PROP_YT_PREVENT_CLICK = 'PROP_YT_PREVENT_CLICK';
+
+GridElement.COLLECT_MODE_ALWAYS = 'COLLECT_MODE_ALWAYS';
+GridElement.COLLECT_MODE_NEVER = 'COLLECT_MODE_NEVER';
 
 GridElement.ID_PREFIX = "grid-element";
 

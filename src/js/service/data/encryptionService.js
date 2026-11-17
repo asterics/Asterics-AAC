@@ -118,6 +118,7 @@ encryptionService.encryptString = function (string, encryptionSalt) {
     let encryptedString = null;
     if (encryptionKey && !_isLocalUser) {
         encryptedString = sjcl.encrypt(encryptionKey, string, { iter: 1000 });
+        encryptedString = (' ' + encryptedString).slice(1); // force flattening of internal ConsString for performance reasons, see https://github.com/asterics/Asterics-AAC/issues/902
     } else {
         encryptedString = string;
     }
@@ -154,6 +155,7 @@ encryptionService.decryptString = function (encryptedString, encryptionSalt) {
             decryptedString = sjcl.decrypt(encryptionKey, encryptedString);
         }
     }
+    decryptedString = (' ' + decryptedString).slice(1); // force flattening of internal ConsString for performance reasons, see https://github.com/asterics/Asterics-AAC/issues/902
 
     _decryptionCache.set(encryptedString, decryptedString);
     return decryptedString;

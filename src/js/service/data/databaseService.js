@@ -142,44 +142,44 @@ databaseService.saveObject = function (objectType, data, onlyUpdate) {
 /**
  * saves a list of objects/documents in one action
  * @param objectList
+ * @param options
+ * @param options.progressFn
  * @return {Promise<unknown[]>}
  */
-databaseService.bulkSave = function (objectList) {
-    if (!objectList || objectList.length === 0) {
-        return Promise.resolve();
+databaseService.bulkSave = async function (objectList, options = {}) {
+    if (!objectList || objectList.length === 0 || objectList[0].isShortVersion) {
+        return;
     }
-    if (objectList[0].isShortVersion) {
-        log.warn('not saving short version!');
-        return Promise.resolve();
+
+    const MAX_MB = 5;
+    const MAX_BYTES = MAX_MB * 1024 * 1024;
+    const totalItems = objectList.length;
+
+    let currentChunk = [];
+    let currentChunkSize = 0;
+    let savedCount = 0;
+    options.progressFn = options.progressFn || (() => {});
+
+    for (let obj of objectList) {
+        await util.sleep(0); // prevent any UI freezes
+
+        let encrypted = convertServiceDb.convertLiveToDatabaseObjects(obj);
+        let itemSize = encrypted.encryptedDataBase64 ? encrypted.encryptedDataBase64.length : 1024;
+        if (currentChunkSize + itemSize > MAX_BYTES && currentChunk.length > 0) {
+            await pouchDbService.bulkDocs(currentChunk);
+            savedCount += currentChunk.length;
+            options.progressFn(Math.round((savedCount / totalItems) * 100));
+            currentChunk = [];
+            currentChunkSize = 0;
+        }
+        currentChunk.push(encrypted);
+        currentChunkSize += itemSize;
     }
-    let elementCount = objectList.reduce((total, grid) => {
-        let gridElementCount = grid.gridElements ? grid.gridElements.length : 0;
-        return total + gridElementCount;
-    }, 0);
-    let maxCountSaveAtOnce = 1000; //found out by tests, above pouchdb errors occured
-    let elemsPerGrid = Math.floor(elementCount / objectList.length);
-    let encryptedList = convertServiceDb.convertLiveToDatabaseObjects(objectList);
-    let chunks = [];
-    encryptedList.forEach((object) => {
-        object._id = object.id;
-    });
-    if (elementCount > maxCountSaveAtOnce) {
-        let gridsPerChunk = Math.floor(maxCountSaveAtOnce / elemsPerGrid);
-        chunks = util.splitInChunks(encryptedList, gridsPerChunk);
-    } else {
-        chunks = [objectList];
+
+    if (currentChunk.length > 0) {
+        await pouchDbService.bulkDocs(currentChunk);
     }
-    function saveChunksSequentially(chunks) {
-        let chunk = JSON.parse(JSON.stringify(chunks.shift()));
-        return pouchDbService.bulkDocs(chunk).then(() => {
-            if (chunks.length > 0) {
-                return saveChunksSequentially(chunks);
-            } else {
-                return Promise.resolve();
-            }
-        });
-    }
-    return saveChunksSequentially(chunks);
+    options.progressFn(100);
 };
 
 /**

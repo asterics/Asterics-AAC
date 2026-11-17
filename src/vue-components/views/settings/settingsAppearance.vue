@@ -120,7 +120,7 @@
                         </div>
                         <div class="srow">
                             <div class="five columns offset-by-three d-flex" style="height: 1.5em">
-                                <div class="flex-grow-1" v-for="(color, index) in MetaData.getActiveColorScheme(metadata).colors" :title="$t(MetaData.getActiveColorScheme(metadata).categories[index])" :style="`background-color: ${color};`"></div>
+                                <div class="flex-grow-1" v-for="(color, index) in colorUtil.getActiveColorScheme(metadata).colors" :title="$t(colorUtil.getActiveColorScheme(metadata).categories[index])" :style="`background-color: ${color};`"></div>
                             </div>
                         </div>
                         <div class="srow">
@@ -158,7 +158,6 @@
 
 <script>
     import { TextConfig } from '../../../js/model/TextConfig';
-    import { MetaData } from '../../../js/model/MetaData';
     import { constants } from '../../../js/util/constants';
     import { settingsSaveMixin } from './settingsSaveMixin';
     import SliderInput from '../../modals/input/sliderInput.vue';
@@ -170,6 +169,7 @@
     import { GridData } from '../../../js/model/GridData';
     import { util } from '../../../js/util/util';
     import { ColorConfig } from '../../../js/model/ColorConfig';
+    import {colorUtil} from "../../../js/util/colorUtil";
 
     export default {
         components: { AppGridDisplay, Accordion, SliderInput },
@@ -179,7 +179,7 @@
             return {
                 TextConfig: TextConfig,
                 ColorConfig: ColorConfig,
-                MetaData: MetaData,
+                colorUtil: colorUtil,
                 constants: constants,
                 testGridData: null,
                 testElementLabel: i18nService.t("testElement"),

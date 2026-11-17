@@ -69,6 +69,10 @@
                             <input id="voiceLangIsTextLang" type="checkbox" v-model="userSettingsLocal.voiceConfig.voiceLangIsTextLang" @change="saveUserSettings()"/>
                             <label for="voiceLangIsTextLang">{{ $t('linkVoiceLanguageToTranslationLanguageOfSpokenText') }}</label>
                         </div>
+                        <div class="srow">
+                            <input id="waitForSpeechToFinish" type="checkbox" v-model="userSettingsLocal.voiceConfig.waitForSpeechToFinish" @change="saveUserSettings()"/>
+                            <label for="waitForSpeechToFinish">{{ $t('waitForSpeechToFinish') }}</label>
+                        </div>
                         <div class="srow" v-show="!!speechService.getExternalVoice(userSettingsLocal.voiceConfig.preferredVoice)">
                             <button @click="cacheAll()" :disabled="externalVoiceCacheProgress !== undefined && externalVoiceCacheProgress !== 100">{{ $t('cacheAllTextsOfCurrentConfigurationExternalVoice') }}</button>
                             <span v-show="externalVoiceCacheProgress !== undefined"> ... {{ externalVoiceCacheProgress }}%</span>
@@ -88,6 +92,15 @@
                         <option :value="null">{{ $t('showAllElements') }}</option>
                         <option v-for="level in [...Array(10).keys()].map(i => i + 1)" :value="level">{{ $t('untilLevel', { level: level}) }}</option>
                     </select>
+                </div>
+            </div>
+        </div>
+        <div class="srow">
+            <div class="eleven columns">
+                <h3 class="mt-2">{{ $t('TAB_WORDFORMS') }}</h3>
+                <div class="srow">
+                    <input id="dontResetWordFormsAutomatically" type="checkbox" v-model="metadata.dontResetWordFormsAutomatically" @change="saveMetadata(metadata)"/>
+                    <label for="dontResetWordFormsAutomatically">{{ $t('dontResetWordFormsAutomatically') }}</label>
                 </div>
             </div>
         </div>

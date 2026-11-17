@@ -25,22 +25,28 @@ let NAVIGATION_ID_TO_LAST = 'NAVIGATION_ID_TO_LAST';
  * @param gridDataList list of grids where IDs should be regenerated
  * @return {[]} list of grids with regenerated IDs
  */
-gridUtil.regenerateIDs = function (gridDataList) {
+gridUtil.regenerateIDs = async function (gridDataList, options = {}) {
     let replacedIds = {};
     let returnList = [];
+    options.progressFn = options.progressFn || (() => {});
     gridDataList.forEach((gridData) => {
         let newId = modelUtil.generateId('grid-data');
         replacedIds[gridData.id] = newId;
         gridData._id = gridData.id = newId;
         gridData._rev = null;
     });
-    gridDataList.forEach((gridData) => {
+    let countAll = gridDataList.length;
+    let countDone = 0;
+    for (let gridData of gridDataList) {
         let json = JSON.stringify(gridData);
         Object.keys(replacedIds).forEach((oldId) => {
             json = json.replace(new RegExp(oldId, 'g'), replacedIds[oldId]);
         });
         returnList.push(JSON.parse(json));
-    });
+        await util.sleep(0);
+        countDone++;
+        options.progressFn(Math.round(100 * countDone / countAll));
+    }
     return {
         grids: returnList,
         idMapping: replacedIds
@@ -61,6 +67,59 @@ gridUtil.sortGridElements = function (elements) {
         return a.x - b.x;
     });
 };
+
+/**
+ * sorts grids in order to put home grid first. can also be used with graph elements, see gridUtil.getGraphList()
+ * @param elems array of elements to sort (grids or graph elements)
+ * @param homeGridId the id of the home grid
+ * @param selectedId optional additional ID to sort after home grid
+ * @return {*} sorted array
+ */
+gridUtil.sortGridsByHomeId = function (elems, homeGridId, selectedId = null) {
+    if (!homeGridId) {
+        return elems;
+    }
+    return elems.sort((a, b) => {
+        a = a.grid ? a.grid : a; // make it work also with graph elements, see gridUtil.getGraphList()
+        b = b.grid ? b.grid : b;
+        if (a.id === homeGridId) {
+            return -1;
+        }
+        if (b.id === homeGridId) {
+            return 1;
+        }
+        if (a.id === selectedId) {
+            return -1;
+        }
+        if (b.id === selectedId) {
+            return 1;
+        }
+        return 0;
+    });
+}
+
+/**
+ * sorts grids alphabetically by label, can also be used with graph elements, see gridUtil.getGraphList()
+ * @param elems array of elements to sort (grids or graph elements)
+ * @return {*} sorted array
+ */
+gridUtil.sortGridsByLabel = function (elems) {
+    return elems.sort((a, b) => {
+        a = a.grid ? a.grid : a; // make it work also with graph elements, see gridUtil.getGraphList()
+        b = b.grid ? b.grid : b;
+        return i18nService.getTranslation(a.label).localeCompare(i18nService.getTranslation(b.label), undefined, {numeric: true});
+    });
+}
+
+/**
+ * sorts grids first by label and then by home grid ID.
+ * @see gridUtil.sortGridsByLabel()
+ * @see gridUtil.sortGridsByHomeId()
+ */
+gridUtil.sortGrids = function (elems, homeGridId, selectedId) {
+    elems = gridUtil.sortGridsByLabel(elems);
+    return gridUtil.sortGridsByHomeId(elems, homeGridId, selectedId);
+}
 
 /**
  * generates a global grid with elements "home", "back", input field, "backspace" and "clear"
@@ -309,65 +368,31 @@ gridUtil.getGraphList = function (grids, removeGridId, orderByName) {
 };
 
 /**
- * returns an array of all possible paths through the grid graph given a start element
- * @param startGraphElem the graph element to start
- * @param paths internal, used for recursion
- * @param currentPath internal, used for recursion
- * @param existingPathEndsMap internal, used for recursion, a map for counting how often a specific grid was the
- *                            last grid of an existing path. So map[gridId] === 3 means that in the current calculated
- *                            paths there are 3 paths that have grid with "gridId" as last element
- * @return {*[]|number} an array containing all possible paths through the graph with the given
- *                      start element.
- *                      e.g. [[startElem.grid, childGrid, childOfChild, ...],
- *                            [startElem.grid, otherChild, ...], ...]
- */
-gridUtil.getAllPaths = function (startGraphElem, paths, currentPath, existingPathEndsMap = {}) {
-    let MAX_PATHS_TO_SAME_GRID = 1;
-    if (!startGraphElem) {
-        return [];
-    }
-    paths = paths || [];
-    currentPath = currentPath || [];
-    if (currentPath.includes(startGraphElem)) {
-        addPath();
-        return paths;
-    }
-    currentPath.push(startGraphElem);
-    if (startGraphElem.children.length === 0) {
-        addPath();
-        return paths;
-    }
-    let lastId = currentPath[currentPath.length - 1].grid.id;
-    if (existingPathEndsMap[lastId] >= MAX_PATHS_TO_SAME_GRID) {
-        addPath();
-        return paths;
-    }
-    for (let child of startGraphElem.children) {
-        gridUtil.getAllPaths(child, paths, currentPath.concat([]), existingPathEndsMap);
-    }
-    return paths;
-
-    function addPath() {
-        paths.push(currentPath);
-        let lastId = currentPath[currentPath.length - 1].grid.id;
-        existingPathEndsMap[lastId] = existingPathEndsMap[lastId] ? existingPathEndsMap[lastId] + 1 : 1;
-    }
-}
-
-/**
  * returns a map [gridID] => [shortest path from start elem] for all existing grids that can be reached
- * from startElem
+ * from startElem using Breadth-First Search for high performance.
  * @param startGraphElem start element, one that was returned by gridUtil.getGraphList
  * @return {{}}
  */
 gridUtil.getIdPathMap = function (startGraphElem) {
-    let allPaths = gridUtil.getAllPaths(startGraphElem);
     let idPathMap = {};
-    for (let path of allPaths) {
-        for (let i = 0; i < path.length; i++) {
-            let elem = path[i];
-            if (!idPathMap[elem.grid.id] || idPathMap[elem.grid.id].length > i + 1) {
-                idPathMap[elem.grid.id] = path.slice(0, i + 1);
+    if (!startGraphElem) {
+        return idPathMap;
+    }
+
+    // Initialize queue with the starting element
+    let queue = [ [startGraphElem] ];
+    idPathMap[startGraphElem.grid.id] = [startGraphElem];
+
+    while (queue.length > 0) {
+        let currentPath = queue.shift();
+        let currentElem = currentPath[currentPath.length - 1];
+
+        for (let child of currentElem.children) {
+            // Only process if we haven't found a path to this grid yet
+            if (!idPathMap[child.grid.id]) {
+                let newPath = currentPath.concat([child]);
+                idPathMap[child.grid.id] = newPath;
+                queue.push(newPath);
             }
         }
     }
@@ -854,6 +879,35 @@ gridUtil.hasDynamicGridPlaceholder = function(globalGrid) {
         return false;
     }
     return !!globalGrid.gridElements.find(e => e.type === GridElement.ELEMENT_TYPE_DYNAMIC_GRID_PLACEHOLDER);
+};
+
+/**
+ * returns the ID of the grid the given elements navigates to
+ * @param element the element to check
+ * @param homeGridId the ID of the home grid in the current configuration
+ * @return {[String | StringConstructor]|*|null} the ID of the grid the element navigates to or null
+ */
+gridUtil.getNavigateGridId = function (element, homeGridId) {
+    let navAction = element.actions.find((action) => action.modelName === GridActionNavigate.getModelName());
+    if (!navAction) {
+        return null;
+    }
+    if (navAction.navType === GridActionNavigate.NAV_TYPES.TO_HOME) {
+        return homeGridId;
+    }
+    return navAction.toGridId;
+}
+
+gridUtil.getCurrentVocabularyLevel = function (metadata) {
+    let isToggled = localStorageService.get(localStorageService.KEY_CURRENT_TOGGLE_LEVEL);
+    return isToggled ? localStorageService.getJSON(localStorageService.KEY_CURRENT_TOGGLE_LEVEL) : metadata.vocabularyLevel;
+};
+
+gridUtil.getElementsOfVocabularyLevel = function (gridElements, vocabularyLevel) {
+    if (!vocabularyLevel || gridElements.every(element => !element.vocabularyLevel)) {
+        return gridElements;
+    }
+    return gridElements.filter(element => (element.vocabularyLevel && element.vocabularyLevel <= vocabularyLevel) || element.type !== GridElement.ELEMENT_TYPE_NORMAL);
 };
 
 function getAllChildrenRecursive(gridGraphList, gridId) {

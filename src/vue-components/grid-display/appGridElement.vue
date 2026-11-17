@@ -1,7 +1,7 @@
 <template>
     <div v-if="element.type !== GridElement.ELEMENT_TYPE_UI_FILLER" role="button" class="element-container" ref="container" tabindex="40" :aria-label="getAriaLabel(element)" :data-empty="isEmpty(element)"
          :style="`margin: ${elementMarginPx}px; border-radius: ${borderRadiusPx}px; cursor: ${cursorType};
-         border: ${borderWidthPx}px solid ${getBorderColor(element)}; background-color: ${backgroundColor}; font-family: ${metadata.textConfig.fontFamily}; color: ${fontColor}`">
+         border: ${borderWidthPx}px solid ${borderColor}; background-color: ${backgroundColor}; font-family: ${metadata.textConfig.fontFamily}; color: ${fontColor}`">
         <grid-element-normal v-if="element.type === GridElement.ELEMENT_TYPE_NORMAL" :grid-element="element" :metadata="metadata" :container-size="calculatedSize" v-bind="$props" aria-hidden="true"/>
         <grid-element-collect v-if="element.type === GridElement.ELEMENT_TYPE_COLLECT" :metadata="metadata" aria-hidden="true"/>
         <grid-element-youtube v-if="element.type === GridElement.ELEMENT_TYPE_YT_PLAYER" :grid-element="element" aria-hidden="true"/>
@@ -40,6 +40,7 @@ import GridElementLive from './grid-elements/gridElementLive.vue';
 import GridElementMatrixConversation from './grid-elements/gridElementMatrixConversation.vue';
 import { gridUtil } from '../../js/util/gridUtil';
 import GridElementChildPlaceholder from './grid-elements/gridElementChildPlaceholder.vue';
+import {colorUtil} from "../../js/util/colorUtil";
 
 export default {
     components: { GridElementChildPlaceholder, GridElementMatrixConversation, GridElementLive, GridElementNormal, GridElementYoutube, GridElementCollect, GridElementHints, GridElementPredict },
@@ -61,80 +62,19 @@ export default {
             }
         },
         backgroundColor() {
-            if (!this.metadata || !this.element) {
-                return '';
-            }
-            if (this.element.type === GridElement.ELEMENT_TYPE_UI_FILLER) {
-                return constants.COLORS.TRANSPARENT;
-            }
-            if (this.element.type === GridElement.ELEMENT_TYPE_DYNAMIC_GRID_PLACEHOLDER) {
-                return constants.COLORS.TRANSPARENT;
-            }
-            if (this.element.type === GridElement.ELEMENT_TYPE_PREDICTION) {
-                return constants.COLORS.PREDICT_BACKGROUND;
-            }
-            if (this.element.type === GridElement.ELEMENT_TYPE_LIVE) {
-                return this.element.backgroundColor || constants.COLORS.LIVE_BACKGROUND;
-            }
-            if ([ColorConfig.COLOR_MODE_BACKGROUND, ColorConfig.COLOR_MODE_BOTH].includes(this.metadata.colorConfig.colorMode)) {
-                return MetaData.getElementColor(this.element, this.metadata);
-            }
-            return this.metadata.colorConfig.elementBackgroundColor;
+            return colorUtil.getBackgroundColor(this.element, this.metadata);
         },
         fontColor() {
-            if (!this.metadata || !this.metadata.textConfig) {
-                return constants.COLORS.BLACK;
-            }
-            if (!this.metadata.textConfig.fontColor ||
-                [constants.COLORS.BLACK, constants.COLORS.WHITE].includes(this.metadata.textConfig.fontColor)) {
-                // if not set or set to black or white - do auto-contrast
-                let isDark = fontUtil.isHexDark(this.backgroundColor);
-                return isDark ? constants.COLORS.WHITE : constants.COLORS.BLACK;
-            }
-            return this.metadata.textConfig.fontColor;
+            return colorUtil.getFontColor(this.metadata, this.backgroundColor);
+        },
+        borderColor() {
+            return colorUtil.getBorderColor(this.element, this.metadata);
         },
         cursorType() {
             return gridUtil.getCursorType(this.metadata, "pointer");
         }
     },
     methods: {
-        getBorderColor(element) {
-            if (!this.metadata || !this.metadata.colorConfig) {
-                return constants.COLORS.GRAY;
-            }
-
-            if (this.element.type === GridElement.ELEMENT_TYPE_UI_FILLER) {
-                return constants.COLORS.TRANSPARENT;
-            }
-
-            if (this.metadata.colorConfig.colorMode === ColorConfig.COLOR_MODE_BOTH && element.borderColor) {
-                // element.borderColor only used for color mode "both", see https://github.com/asterics/Asterics-AAC/issues/580#issuecomment-3281187917
-                return element.borderColor;
-            }
-
-            let color = this.metadata.colorConfig.elementBorderColor;
-            if (this.metadata.colorConfig.elementBorderColor === constants.DEFAULT_ELEMENT_BORDER_COLOR) {
-                let backgroundColor = this.metadata.colorConfig.gridBackgroundColor || constants.COLORS.WHITE;
-                color = fontUtil.getHighContrastColor(backgroundColor, constants.COLORS.WHITESMOKE, constants.COLORS.GRAY);
-            }
-            if (this.metadata.colorConfig.colorMode === ColorConfig.COLOR_MODE_BORDER) {
-                return MetaData.getElementColor(element, this.metadata, color);
-            }
-            if (this.metadata.colorConfig.colorMode === ColorConfig.COLOR_MODE_BOTH) {
-                if (!element.colorCategory) {
-                    return 'transparent';
-                }
-                let colorScheme = MetaData.getUseColorScheme(this.metadata);
-                if (colorScheme && colorScheme.customBorders && colorScheme.customBorders[element.colorCategory]) {
-                    return colorScheme.customBorders[element.colorCategory];
-                }
-                let absAdjustment = 40;
-                let bgColor = MetaData.getElementColor(element, this.metadata, color);
-                let adjustment = fontUtil.isHexDark(bgColor) ? absAdjustment * 1.5 : absAdjustment * -1;
-                return fontUtil.adjustHexColor(bgColor, adjustment);
-            }
-            return color;
-        },
         isEmpty(element) {
             if (element.type === GridElementModel.ELEMENT_TYPE_NORMAL) {
                 return !stateService.getDisplayText(element.id) && (!element.image || (!element.image.url && !element.image.data));

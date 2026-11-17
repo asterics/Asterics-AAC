@@ -52,7 +52,7 @@ export default {
             return util.convertLowerUppercase(label, this.metadata.textConfig.convertMode);
         },
         displayLabel() {
-            let label = util.replaceAll(this.calculateLabel, '\n', '<br>');
+            let label = util.replaceAll(util.escapeHtml(this.calculateLabel), '\n', '<br>');
             label = util.replaceAll(label, '\\\\n', '<br>');
             return util.replaceAll(label, '\\\\N', '<br>');
         },
@@ -126,7 +126,7 @@ export default {
     },
     mounted() {
         this.calcFontSize();
-        $(document).on(constants.EVENT_ELEM_TEXT_CHANGED, this.externalUpdateFn);
+        $(document).on(`${constants.EVENT_ELEM_TEXT_CHANGED}.${this.gridElement.id}`, this.externalUpdateFn);
         if (this.editable || this.watchForChanges) {
             this.$watch("metadata", () => {
                 this.calcFontSize();
@@ -137,7 +137,7 @@ export default {
         }
     },
     beforeDestroy() {
-        $(document).off(constants.EVENT_ELEM_TEXT_CHANGED, this.externalUpdateFn);
+        $(document).off(`${constants.EVENT_ELEM_TEXT_CHANGED}.${this.gridElement.id}`);
     }
 }
 </script>

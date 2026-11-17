@@ -132,13 +132,26 @@ dataService.saveGrid = function (gridData, options = {}) {
 /**
  * saves a list of grids, using bulkSave. Faster performance but no check for existing grids
  * @param gridDataList the list of grids to save
+ * @param options
+ * @param options.progressFn
  */
-dataService.saveGrids = function (gridDataList) {
-    gridDataList.forEach((gridData) => {
+dataService.saveGrids = async function (gridDataList, options = {}) {
+    let saveList = [];
+    let elemCount = gridDataList.length;
+    let processedCount = 0;
+    options.progressFn = options.progressFn || (() => {});
+    for (let elem of gridDataList) {
+        let gridData = JSON.parse(JSON.stringify(elem));
         gridData.gridElements = gridUtil.sortGridElements(gridData.gridElements);
         gridData.lastUpdateTime = new Date().getTime();
+        saveList.push(gridData);
+        processedCount++;
+        options.progressFn(Math.round(20 * processedCount / elemCount));
+        await util.sleep(0);
+    }
+    return databaseService.bulkSave(saveList, {
+        progressFn: (p) => options.progressFn(20 + (p / 100) * 80)
     });
-    return databaseService.bulkSave(gridDataList);
 };
 
 /**
@@ -670,10 +683,11 @@ dataService.importData = async function (data, options) {
     dataUtil.removeDatabaseProperties(importData.grids);
     dataUtil.removeDatabaseProperties(importData.dictionaries, true);
     dataUtil.removeDatabaseProperties(importData.metadata, true);
-    options.progressFn(10);
     let existingGrids = await dataService.getGrids();
     let existingNames = existingGrids.map((grid) => i18nService.getTranslation(grid.label));
-    let regenerateIdsReturn = gridUtil.regenerateIDs(importData.grids);
+    let regenerateIdsReturn = await gridUtil.regenerateIDs(importData.grids, {
+        progressFn: (p) => options.progressFn((p / 100) * 20)
+    });
     importData.grids = regenerateIdsReturn.grids;
     if (importData.metadata && (importData.metadata.lastOpenedGridId || importData.metadata.globalGridId || importData.metadata.homeGridId)) {
         importData.metadata.lastOpenedGridId = regenerateIdsReturn.idMapping[importData.metadata.lastOpenedGridId];
@@ -703,11 +717,21 @@ dataService.importData = async function (data, options) {
         existingMetadata.lastOpenedGridId = importData.metadata.lastOpenedGridId;
         importData.metadata = existingMetadata;
     }
-
-    await dataService.saveGrids(JSON.parse(JSON.stringify(importData.grids)));
+    await dataService.saveGrids(importData.grids, {
+        progressFn: (p) => options.progressFn(20 + (p / 100) * 50)
+    });
     options.progressFn(70);
     if (importData.metadata) {
         importData.metadata.globalGridActive = !!importData.metadata.globalGridId;
+        let existingMetadata = await dataService.getMetadata();
+        let existingGridIds = existingGrids.map((grid) => grid.id);
+        if (existingGridIds.includes(existingMetadata.homeGridId)) {
+            importData.metadata.homeGridId = existingMetadata.homeGridId;
+        }
+        if (existingGridIds.includes(existingMetadata.globalGridId) && !options.generateGlobalGrid) {
+            importData.metadata.globalGridId = existingMetadata.globalGridId;
+            importData.metadata.globalGridActive = existingMetadata.globalGridActive;
+        }
         await dataService.saveMetadata(importData.metadata);
     }
     options.progressFn(80);
