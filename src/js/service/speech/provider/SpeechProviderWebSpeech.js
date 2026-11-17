@@ -30,6 +30,7 @@ class SpeechProviderWebSpeech extends BaseSpeechProvider {
         msg.pitch = options.pitch ?? 1;
         msg.rate = options.rate ?? 1;
         msg.volume = options.volume ?? 1;
+        msg.lang = voice?.langFull || voice?.lang;
         if (options.progressFn) {
             msg.addEventListener('boundary', options.progressFn);
             msg.addEventListener('end', options.progressFn);
