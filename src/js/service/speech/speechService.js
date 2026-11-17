@@ -6,6 +6,7 @@ import { audioUtil } from '../../util/audioUtil.js';
 import { localStorageService } from '../data/localStorageService.js';
 import { i18nService } from '../i18nService.js';
 import { SpeechProviderWebSpeech } from './provider/SpeechProviderWebSpeech.js';
+import { SpeechProviderResponsiveVoice } from './provider/SpeechProviderResponsiveVoice.js';
 import { SpeechProviderCustom } from "./provider/SpeechProviderCustom";
 
 let speechService = {};
@@ -33,6 +34,7 @@ let _speakArrayRunId = undefined;
 async function init() {
     _providers = [
         new SpeechProviderWebSpeech(),
+        new SpeechProviderResponsiveVoice(),
         new SpeechProviderCustom()
     ];
 
