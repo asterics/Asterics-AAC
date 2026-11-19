@@ -9,19 +9,29 @@
         </div>
 
         <div class="my-3">
-            <input class="col-12" id="searchBar" type="text" v-model="searchTerm" @input="search" :aria-label="$t('search')" :placeholder="$t('search')"/>
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    <input class="col-12" id="searchBar" type="text" v-model="searchTerm" @input="search" :aria-label="$t('search')" :placeholder="$t('search')" v-focus/>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="row mt-3 mt-md-0 mb-2">
+                        <div class="col-12 col-md-4 col-xl-3 d-md-flex justify-content-md-end align-items-center">
+                            <label for="langSelect">{{ $t('language') }}</label>
+                        </div>
+                        <div class="col-12 col-md-8 col-xl-9">
+                            <select class="col-12" id="langSelect" v-model="searchOptions.lang" @change="search">
+                                <option value="">(all)</option>
+                                <option v-for="lang in selectLanguages" :value="lang.code">{{lang | extractTranslationAppLang}} ({{lang.code}})</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <accordion :acc-label="$t('moreSearchOptions')" class="mt-3">
                 <div class="container-fluid p-0">
                     <div class="row mt-2">
-                        <label>{{ $t('language') }}</label>
-                        <select v-model="searchOptions.lang" @change="search">
-                            <option value="">(all)</option>
-                            <option v-for="lang in selectLanguages" :value="lang.code">{{lang | extractTranslationAppLang}} ({{lang.code}})</option>
-                        </select>
-                    </div>
-                    <div class="row">
-                        <label>{{ $t('type') }}</label>
-                        <select v-model="searchOptions.type" @change="search">
+                        <label for="typeSelect">{{ $t('type') }}</label>
+                        <select id="typeSelect" v-model="searchOptions.type" @change="search">
                             <option value="">(all)</option>
                             <option :value="constants.BOARD_TYPE_SELFCONTAINED">{{ $t(constants.BOARD_TYPE_SELFCONTAINED) }}</option>
                             <option :value="constants.BOARD_TYPE_SINGLE">{{ $t(constants.BOARD_TYPE_SINGLE) }}</option>
@@ -116,7 +126,6 @@
             let thiz = this;
             thiz.gridPreviews = await boardService.query();
             thiz.selectLanguages = this.allLanguages.filter(lang => this.gridPreviews.some(preview => preview.languages.includes(lang.code)));
-            thiz.searchOptions.lang = thiz.selectLanguages.map(e => e.code).includes(i18nService.getAppLang()) ? i18nService.getAppLang() : "";
             thiz.gridPreviews = await boardService.query("", thiz.searchOptions);
         },
         beforeDestroy() {
