@@ -32,6 +32,7 @@
     "@babel/core": "^7.28.5",
     "@babel/plugin-transform-modules-commonjs": "^7.21.5",
     "@babel/preset-env": "^7.28.5",
+    "@playwright/test": "^1.65.1",
     "babel-jest": "^29.5.0",
     "babel-loader": "^10.0.0",
     "core-js": "^3.46.0",
@@ -59,6 +60,7 @@
     "release-latest": "cp scripts/releaseLatest.sh scripts/releaseLatest.tmp.sh && sh scripts/releaseLatest.tmp.sh && rm scripts/releaseLatest.tmp.sh",
     "release-beta": "sh scripts/releaseBeta.sh",
     "test": "jest",
+    "test:e2e": "playwright test",
     "stats": "webpack --config webpack.config.js --env.production --env.nolog --profile --json > stats.json && webpack-bundle-analyzer stats.json app/build",
     "stats-dev": "webpack --config webpack.config.js --env.nolog --profile --json > stats.json && webpack-bundle-analyzer stats.json app/build",
     "prepare": "husky install"
