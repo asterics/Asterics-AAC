@@ -254,7 +254,7 @@
         methods: {
             save() {
                 let thiz = this;
-                dataService.saveGrids(JSON.parse(JSON.stringify(thiz.changedGrids))).then(() => {
+                dataService.saveGrids(thiz.changedGrids).then(() => {
                     thiz.$emit('reload');
                     thiz.$emit('close');
                 });

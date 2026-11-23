@@ -52,7 +52,7 @@ export default {
             return util.convertLowerUppercase(label, this.metadata.textConfig.convertMode);
         },
         displayLabel() {
-            let label = util.replaceAll(this.calculateLabel, '\n', '<br>');
+            let label = util.replaceAll(util.escapeHtml(this.calculateLabel), '\n', '<br>');
             label = util.replaceAll(label, '\\\\n', '<br>');
             return util.replaceAll(label, '\\\\N', '<br>');
         },

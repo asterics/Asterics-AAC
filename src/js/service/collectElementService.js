@@ -359,7 +359,7 @@ async function updateCollectElements(isSecondTry) {
             $(`#${collectElement.id}`).attr('aria-label', `${text}, ${i18nService.t('ELEMENT_TYPE_COLLECT')}`);
             predictionService.learnFromInput(text, dictionaryKey);
             let html = `<span style="padding: 5px; display: flex; align-items: center; flex: 1; text-align: left; font-weight: bold;">
-                            ${text}
+                            ${util.escapeHtml(text)}
                         </span>`;
             outerContainerJqueryElem.html(
                 (html = `<div class="collect-container${rotationClass}" dir="auto" style="height: 100%; flex: 1; background-color: ${backgroundColor}; text-align: justify;">${html}</div>`)
@@ -422,7 +422,7 @@ async function updateCollectElements(isSecondTry) {
                 let marked = markedImageIndex === index;
                 let imgHTML = null;
                 if (image) {
-                    imgHTML = `<img src="${image}" height="${imgHeight}" style="height: ${imgHeight}px" onerror="handleCollectElementImageError()" ${_useCrossorignAttribute ? 'crossorigin="anonymous"' : ''}/>`;
+                    imgHTML = `<img src="${util.escapeHtml(image)}" height="${imgHeight}" style="height: ${imgHeight}px" onerror="handleCollectElementImageError()" ${_useCrossorignAttribute ? 'crossorigin="anonymous"' : ''}/>`;
                     totalWidth += elemWidth + 2 * imgMargin;
                 } else {
                     let fontSizeFactor = collectElement.textElemSizeFactor || 1.5;
@@ -430,18 +430,18 @@ async function updateCollectElements(isSecondTry) {
                     elemWidth =
                         fontUtil.getTextWidth(label, outerContainerJqueryElem[0], `${fontSize}px`) + 2 * imgMargin;
                     totalWidth += elemWidth + 4 * imgMargin;
-                    imgHTML = `<div style="padding: ${imgMargin}px; font-size: ${fontSize}px; width: ${elemWidth}px; height: ${imgHeight}px; display: flex; justify-content: center; align-items: center; text-align: center;"><span>${label}</span></div>`;
+                    imgHTML = `<div style="padding: ${imgMargin}px; font-size: ${fontSize}px; width: ${elemWidth}px; height: ${imgHeight}px; display: flex; justify-content: center; align-items: center; text-align: center;"><span>${util.escapeHtml(label)}</span></div>`;
                 }
                 html += `<div id="collect${index}" style="display: flex; flex:0; justify-content: center; flex-direction: column; padding: ${imgMargin}px; color: ${textColor}; ${
                     marked ? `background-color: ${darkMode ? 'darkgreen' : 'lightgreen'};` : ''
-                }" title="${label}">
+                }" title="${util.escapeHtml(label)}">
                                 <div style="display:flex; justify-content: center">
                                         ${imgHTML}
                                 </div>
                                 <div style="text-align: center; font-weight: bold; font-size: ${textHeight}px; line-height: ${lineHeight}px; height: ${lineHeight}px; width: ${elemWidth}px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; ${
                     !showLabel ? 'display: none' : ''
                 }">
-                                    ${image ? label : ''}
+                                    ${image ? util.escapeHtml(label) : ''}
                                 </div>
                              </div>`;
             }
