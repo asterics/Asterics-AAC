@@ -203,9 +203,6 @@
             setViewPropsUnlocked() {
                 $(document).trigger(constants.EVENT_UI_UNLOCKED);
 
-                $('body').css("backgroundColor", "#ffffff");
-                $('#app').css("backgroundColor", "#ffffff");
-
                 //enable zoom
                 $('#viewPortMeta').attr('content', 'width=device-width, initial-scale=1');
                 $('body').attr('touch-action', '');
