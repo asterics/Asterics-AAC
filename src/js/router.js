@@ -252,6 +252,7 @@ Router.toEditGrid = async function(id, highlightId) {
         id = grids.length > 0 ? grids[0].id : null;
     }
     if (id) {
+        Router.addToGridHistory(id);
         Router.to(`#grid/edit/${id}/${highlightId ? highlightId : ''}`);
     }
 };
