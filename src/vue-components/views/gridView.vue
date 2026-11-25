@@ -189,6 +189,13 @@
                 $(document).trigger(constants.EVENT_SIDEBAR_CLOSE);
                 $(document).trigger(constants.EVENT_UI_LOCKED);
 
+                const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (isDarkMode) {
+                    $('body').css("backgroundColor", "#000000");
+                    $('#app').css("backgroundColor", "#000000");
+                }
+
+
                 // prevent zoom
                 $('#viewPortMeta').attr('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
                 $('#gridView').on('touchmove', this.preventZoomHandler);
