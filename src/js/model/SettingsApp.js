@@ -7,6 +7,7 @@ class SettingsApp {
      * @param settings.unlockPasscode
      * @param settings.syncNavigation
      * @param settings.externalSpeechServiceUrl
+     * @param settings.showSearchLocked if true, the floating search button is shown in locked mode (default: true)
      */
     constructor(settings) {
         settings = settings || {};
@@ -15,6 +16,7 @@ class SettingsApp {
         this.unlockPasscode = settings.unlockPasscode;
         this.syncNavigation = settings.syncNavigation;
         this.externalSpeechServiceUrl = settings.externalSpeechServiceUrl;
+        this.showSearchLocked = settings.showSearchLocked !== undefined ? settings.showSearchLocked : true;
 
         convertServiceLocal.updateDataModel(this);
     }

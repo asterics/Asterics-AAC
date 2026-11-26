@@ -388,6 +388,7 @@
   "synchronizeNavigationAndLockedState": "Synchronize navigation and locked/fullscreen state for online users",
   "lockUserInterface": "Lock user interface",
   "passcodeForUnlockingUserInterface": "Passcode for unlocking user interface (only numbers)",
+  "showSearchInLockedMode": "Show search button in locked mode",
   "reset": "Reset",
   "allGridsAreSavedOffline": "all grids are saved offline",
   "allFunctionsAvailable": "all functions available",

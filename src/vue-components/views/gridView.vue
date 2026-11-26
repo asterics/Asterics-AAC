@@ -19,6 +19,7 @@
                 <i class="fas fa-expand"></i>
             </button>
             <button tabindex="31"
+                    v-if="showSearchLocked"
                     @click="MainVue.showSearchModal()"
                     class="floating-control-button"
                     :aria-label="$t('search')"
@@ -138,6 +139,7 @@
                 modalTypes: modalTypes,
                 unlockCount: UNLOCK_COUNT,
                 unlockCounter: UNLOCK_COUNT,
+                showSearchLocked: localStorageService.getAppSettings().showSearchLocked,
                 MainVue: MainVue,
                 highlightTimeoutHandler: null,
                 highlightedElementId: null,
