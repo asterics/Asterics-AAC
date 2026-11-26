@@ -388,6 +388,7 @@
   "synchronizeNavigationAndLockedState": "Sincronizar el estado de navegación y el bloqueo/pantalla completa para usuarios online",
   "lockUserInterface": "Bloqueo de la interfaz de usuario",
   "passcodeForUnlockingUserInterface": "Contraseña para desbloquear la interfaz de usuario (sólo números)",
+  "showSearchInLockedMode": "Mostrar la búsqueda en modo bloqueado",
   "reset": "Restablecer",
   "allGridsAreSavedOffline": "todas los tableros se guardan offline",
   "allFunctionsAvailable": "todas las funciones están disponibles",

@@ -30,6 +30,10 @@
                     <input class="five columns" id="unlockPass" type="number" v-model="appSettings.unlockPasscode" @input="appSettings.unlockPasscode = appSettings.unlockPasscode.substring(0, 6); saveAppSettings(appSettings)" :placeholder="$t('noPasscodeBracket')"/>
                     <button class="three columns" @click="appSettings.unlockPasscode = null; saveAppSettings(appSettings)">{{ $t('reset') }}</button>
                 </div>
+                <div class="srow">
+                    <input id="chkShowSearchLocked" type="checkbox" v-model="appSettings.showSearchLocked" @change="saveAppSettings(appSettings)"/>
+                    <label for="chkShowSearchLocked">{{ $t('showSearchInLockedMode') }}</label>
+                </div>
             </div>
         </div>
         <div class="srow">
