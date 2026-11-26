@@ -78,10 +78,14 @@
   "lint-staged": {
     "*.{js,css,md}": "prettier --write"
   },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "transform": {
-      "^.+\\.[t|j]sx?$": "babel-jest"
-    }
-  }
+ "jest": {
+  "testEnvironment": "jsdom",
+  "transform": {
+    "^.+\\.[t|j]sx?$": "babel-jest"
+  },
+  "testPathIgnorePatterns": [
+    "/node_modules/",
+    "/tests/e2e/"
+  ]
+}
 }
