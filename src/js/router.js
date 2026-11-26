@@ -252,6 +252,7 @@ Router.toEditGrid = async function(id, highlightId) {
         id = grids.length > 0 ? grids[0].id : null;
     }
     if (id) {
+        Router.addToGridHistory(id);
         Router.to(`#grid/edit/${id}/${highlightId ? highlightId : ''}`);
     }
 };
@@ -296,7 +297,11 @@ Router.toLastGrid = function () {
     }
     _gridHistory.pop(); // remove current grid
     let toId = _gridHistory.pop();
-    Router.toGrid(toId);
+    if (Router.isOnEditPage()) {
+        Router.toEditGrid(toId);
+    } else {
+        Router.toGrid(toId);
+    }
 };
 
 function getValidHash() {
